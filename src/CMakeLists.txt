@@ -13,8 +13,9 @@ set(PROJECT_SOURCES
     main.cpp
     LatticeMainWindow.h
     LatticeMainWindow.cpp
-    LatticeBoltzmannMethod.h
-    LatticeBoltzmannMethod.cpp)
+    core/Matrix.hpp
+    core/LatticeBoltzmannMethod.h
+    core/LatticeBoltzmannMethod.cpp)
 
 set(PROJECT_EXECUTABLE_NAME ${PROJECT_NAME})
 add_executable(${PROJECT_EXECUTABLE_NAME} ${PROJECT_SOURCES})
