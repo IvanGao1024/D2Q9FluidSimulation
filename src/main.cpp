@@ -12,11 +12,19 @@
 #ifndef MAIN_CPP
 #define MAIN_CPP
 
-#include "LatticeApplication.h"
+#include <QApplication>
+#include "LatticeMainWindow.h"
+
+const quint16 HEIGHT = 800;
+const quint16 WIDTH  = 800;
 
 int main(int argc, char *argv[])
 {
-	LatticeApplication LatticeApplication(argc, argv);
-	return LatticeApplication.exec();
+	QApplication app(argc, argv);
+
+	LatticeMainWindow mLatticeMainWindow(HEIGHT, WIDTH);
+	mLatticeMainWindow.show();
+
+	return QApplication::exec();
 }
-#endif // MAIN_CPP
+#endif  // MAIN_CPP

@@ -10,15 +10,15 @@ find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 # find_package(Qt6 COMPONENTS Sql REQUIRED)
 
 set(PROJECT_SOURCES
-    Main.cpp
-    LatticeApplication.h
-    LatticeApplication.cpp
+    main.cpp
+    LatticeMainWindow.h
+    LatticeMainWindow.cpp
     LatticeBoltzmannMethod.h
     LatticeBoltzmannMethod.cpp)
 
 set(PROJECT_EXECUTABLE_NAME ${PROJECT_NAME})
 add_executable(${PROJECT_EXECUTABLE_NAME} ${PROJECT_SOURCES})
-install(TARGETS ${PROJECT_EXECUTABLE_NAME} DESTINATION "bin")
+install(TARGETS ${PROJECT_EXECUTABLE_NAME} DESTINATION "deploy")
 
 ###link QT lib
 target_link_libraries(${PROJECT_EXECUTABLE_NAME} PRIVATE Qt6::Core)

@@ -45,10 +45,6 @@ CheckOptions:
     value: UPPER_CASE
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
-  - key: readability-identifier-naming.PrivateMemberPrefix
-    value: m_
-  - key: readability-identifier-naming.ProtectedMemberPrefix
-    value: m_
   - key: readability-identifier-naming.PublicMemberCase
     value: camelBack
   - key: readability-identifier-naming.StaticMemberCase

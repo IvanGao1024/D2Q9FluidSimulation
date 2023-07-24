@@ -10,4 +10,4 @@ class LatticeBoltzmannMethod: public QObject
 public:
 	LatticeBoltzmannMethod(QObject *parent = nullptr);
 };
-#endif //LATTICE_BOLTZMANN_METHOD
+#endif  // LATTICE_BOLTZMANN_METHOD

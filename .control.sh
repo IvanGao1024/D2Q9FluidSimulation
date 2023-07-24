@@ -2,7 +2,7 @@
 # environment variable
 
 # QT_LIB_PATH=/6.2.0/gcc_64/lib
-# QT_LIB_PATH=/home/ivan/QT6.5.1/6.5.1/gcc_64/lib
+QT_LIB_PATH=/home/ivan/QT6.5.1/6.5.1/gcc_64/lib
 
 # default value
 Command=style
@@ -20,12 +20,8 @@ case $i in
     Command=doc
     shift # past argument=value
     ;;
-    -command=buildClient)
-    Command=buildClient
-    shift # past argument=value
-    ;;
-    -command=buildServer)
-    Command=buildServer
+    -command=test)
+    Command=test
     shift # past argument=value
     ;;
     -command=deploy)
@@ -55,9 +51,9 @@ case $Command in
         find src/ -path src/thirdparty -prune -o -name '*.hpp' -exec clang-format -style=file --verbose -i "{}" \; -print
         find src/ -path src/thirdparty -prune -o -name '*.h' -exec clang-format -style=file --verbose -i "{}" \; -print
         find src/ -path src/thirdparty -prune -o -name '*.cpp' -exec clang-format -style=file --verbose -i "{}" \; -print
-        find src/ -name "*.cpp" | xargs clang-tidy -p temp/build
-        find src/ -name "*.h" | xargs clang-tidy -p temp/build
-        find src/ -name "*.hpp" | xargs clang-tidy -p temp/build
+        find src/ -name "*.cpp" -print0 | xargs -0 -r clang-tidy -p temp/build
+        find src/ -name "*.h" -print0 | xargs -0 -r clang-tidy -p temp/build
+        find src/ -name "*.hpp" -print0 | xargs -0 -r clang-tidy -p temp/build
         ;;
     doc) # build both document and code document
         # generate doxygen documentation
@@ -65,57 +61,10 @@ case $Command in
         doxygen .doxyfile
         mv -T temp/doc/html temp/doc/doxygen
         ;;
-    buildClient) # build client
-        rm -rf temp/deploy/client
-        cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug -DENABLE_DEBUG=YES -DBUILD_TESTS=NO -DBUILD_SERVER=NO -DBUILD_CLIENT=YES
-        make --directory=temp/build -j$(nproc) all install
-        case $Platform in
-        linux)
-            echo -e "#!/bin/bash\nexport LD_LIBRARY_PATH=${QT_LIB_PATH}\n./CreepsWorldClient" > temp/deploy/client/startup.sh
-            ;;
-        windows)
-            ;;
-        mac)
-            ;;
-        *)
-            echo "Invalid Platform specified: $Platform"
-            exit 1
-        esac
-        ;;
-    buildServer) # build server
-        rm -rf temp/deploy/server
-        cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug -DENABLE_DEBUG=YES -DBUILD_TESTS=NO -DBUILD_SERVER=YES -DBUILD_CLIENT=NO
-        make --directory=temp/build -j$(nproc) all install
-        case $Platform in
-        linux)
-            echo -e "#!/bin/bash\nexport LD_LIBRARY_PATH=${QT_LIB_PATH}\n./CreepsWorldServer" > temp/deploy/server/startup.sh
-            ;;
-        windows)
-            ;;
-        mac)
-            ;;
-        *)
-            echo "Invalid Platform specified: $Platform"
-            exit 1
-        esac
-        ;;
-    deploy) # deploy both server and client
+    test) # test
         rm -rf temp/deploy/
-        cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=release -DENABLE_DEBUG=YES -DBUILD_TESTS=NO -DBUILD_SERVER=YES -DBUILD_CLIENT=YES
+        cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug
         make --directory=temp/build -j$(nproc) all install
-        case $Platform in
-        linux)
-            echo -e "#!/bin/bash\nexport LD_LIBRARY_PATH=${QT_LIB_PATH}\n./CreepsWorldClient" > temp/deploy/client/startup.sh
-            echo -e "#!/bin/bash\nexport LD_LIBRARY_PATH=${QT_LIB_PATH}\n./CreepsWorldServer" > temp/deploy/server/startup.sh
-            ;;
-        windows)
-            ;;
-        mac)
-            ;;
-        *)
-            echo "Invalid Platform specified: $Platform"
-            exit 1
-        esac
         ;;
     # test) # build test and report coverage
         # TODO:
