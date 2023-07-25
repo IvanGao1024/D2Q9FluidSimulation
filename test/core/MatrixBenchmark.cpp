@@ -1,8 +1,10 @@
 #include <benchmark/benchmark.h>
+#include "../../src/core/Matrix.hpp"
 
-static void BM_StringCopy(benchmark::State& state) {
-  std::string x = "hello";
-  for (auto _ : state)
-    std::string copy(x);
+static void LargeMatrixInitialization(benchmark::State& state) {
+    for (auto _ : state) {
+        Matrix<int> m(10000, 10000);
+    }
 }
-BENCHMARK(BM_StringCopy);
+
+BENCHMARK(LargeMatrixInitialization);

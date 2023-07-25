@@ -74,7 +74,8 @@ case $Command in
         rm -rf temp/documentations/coverages
         mkdir -p temp/documentations/coverages
         temp/build/bin/MainTests
-        temp/build/bin/MainBenchmarksgcovr -r . -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o temp/documentations/coverages/report_coverage.html
+        temp/build/bin/MainBenchmarks --benchmark_time_unit=ms
+        gcovr -r . -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o temp/documentations/coverages/report_coverage.html
         ;;
     *)
         echo "Invalid Commandule specified: $Command" 

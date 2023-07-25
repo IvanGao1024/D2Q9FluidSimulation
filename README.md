@@ -2,4 +2,4 @@
 
 Based on lattice Boltzmann Methods on non-compressible fluid.
 
-Dockerfile Add openmp
+Dockerfile Add openMP
