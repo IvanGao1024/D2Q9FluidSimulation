@@ -24,4 +24,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_PREFIX_PATH "${QT_LIB_PATH}/cmake/")
 set(CMAKE_TOOLCHAIN_FILE "${QT_LIB_PATH}/cmake/Qt6/qt.toolchain.cmake")
 
+find_package(Qt6 REQUIRED COMPONENTS Core) # to provide a qt version for test
 add_subdirectory(src)
+add_subdirectory(test)

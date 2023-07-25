@@ -20,6 +20,10 @@ case $i in
     Command=doc
     shift # past argument=value
     ;;
+    -command=build)
+    Command=build
+    shift # past argument=value
+    ;;
     -command=test)
     Command=test
     shift # past argument=value
@@ -61,18 +65,18 @@ case $Command in
         doxygen .doxyfile
         mv -T temp/doc/html temp/doc/doxygen
         ;;
-    test) # test
-        rm -rf temp/deploy/
+    build) # build
+        rm -rf temp
         cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug
         make --directory=temp/build -j$(nproc) all install
         ;;
-    # test) # build test and report coverage
-        # TODO:
-        # cmake -S . -B ./temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug -DDEBUG=YES -DBUILD_TESTS=YES -DBUILD_SERVER=NO -DBUILD_CLIENT=NO
-        # make --directory=temp/build -j7
-        # ctest --test-dir ./temp/build --output-on-failure --parallel 4
-        #!/bin/sh
-
+    test) # test
+        rm -rf temp
+        cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug
+        make --directory=temp/build -j$(nproc) all install
+        ./temp/deploy/tests/test_main
+        # ctest --test-dir ./temp/build/test --output-on-failure --parallel $(nproc)
+        
         # coverage
         # cd runtime
         # rm -rf coverages
@@ -81,6 +85,7 @@ case $Command in
         # gcovr -r ./.. -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o ./coverages/coverages.html
         # ;;
         # GDB test code: gdb -ex "set env LD_LIBRARY_PATH /home/ivan/QT6.5.1/6.5.1/gcc_64/lib" -ex "run" ./CreepsWorldClient
+        ;;
     *)
         echo "Invalid Commandule specified: $Command" 
         exit 1

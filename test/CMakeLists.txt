@@ -1,0 +1,10 @@
+find_package(GTest REQUIRED)
+add_executable(MatrixTest core/MatrixTest.cpp)
+target_link_libraries(MatrixTest GTest::gtest_main)
+target_link_libraries(MatrixTest GTest::gtest)
+target_link_libraries(MatrixTest GTest::gmock)
+
+find_package(benchmark REQUIRED)
+add_executable(MatrixBenchmark core/MatrixBenchmark.cpp)
+target_link_libraries(MatrixBenchmark benchmark::benchmark_main)
+target_link_libraries(MatrixBenchmark benchmark::benchmark)

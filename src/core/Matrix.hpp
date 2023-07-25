@@ -11,10 +11,10 @@ using namespace std;
 template <typename T>
 class Matrix {
 private:
-    int width;
-    int height;
     std::pair<int, int> base{0, 0};
     std::vector<T> data;
+    int width;
+    int height;
 
 public:
     struct Index {
