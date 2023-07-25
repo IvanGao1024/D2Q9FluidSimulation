@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <execution>
 #include <iostream>
-using namespace std;
 
 /**
  * @brief The origin is at (0,0), located at the bottom left,
