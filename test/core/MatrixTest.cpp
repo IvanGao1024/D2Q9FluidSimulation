@@ -15,11 +15,16 @@ protected:
     }
 };
 
-TEST_F(MatrixTest, IsEmptyInitially) {
-//   EXPECT_EQ(q0_.size(), 0);
+TEST_F(MatrixTest, ConstructorInitiationTest) {
+    Matrix<int> m1(20,20);
+    EXPECT_EQ(m1.at({5,5}), 0);
+    Matrix<int> m2(20,20, 0);
+    EXPECT_EQ(m2.at({5,5}), 0);
+    Matrix<int> m3(20,20, 1);
+    EXPECT_EQ(m3.at({5,5}), 1);
 }
 
-TEST_F(MatrixTest, DequeueWorks) {
+TEST_F(MatrixTest, BaseShiftTest) {
     // int* n = q0_.Dequeue();
     // EXPECT_EQ(n, nullptr);
 

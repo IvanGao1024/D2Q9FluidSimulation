@@ -24,7 +24,8 @@ Checks: 'clang-analyzer-apiModeling.StdCLibraryFunctions,
          clang-analyzer-unix.MismatchedDeallocator,
          clang-analyzer-unix.cstring.BadSizeArg,
          clang-analyzer-unix.cstring.NullArg,
-         readability-*'
+         readability-*,
+         -readability-redundant-access-specifiers'
 WarningsAsErrors: ''
 HeaderFilterRegex: 'src/.*\.(h|cpp|hpp)'
 FormatStyle: none
@@ -45,7 +46,13 @@ CheckOptions:
     value: UPPER_CASE
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
+  - key: readability-identifier-naming.StaticMemberCase
+    value: camelBack
   - key: readability-identifier-naming.PublicMemberCase
     value: camelBack
-  - key: readability-identifier-naming.StaticMemberCase
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.FunctionCase
     value: camelBack

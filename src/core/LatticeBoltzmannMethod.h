@@ -10,9 +10,10 @@ class LatticeBoltzmannMethod: public QObject
 	Q_OBJECT
 
 public:
-	LatticeBoltzmannMethod(quint16 height, quint16 width, QObject *parent = nullptr);
+	LatticeBoltzmannMethod(quint16 height, quint16 width, QObject* parent = nullptr);
 
-	static void increment(int& x) {
+	static void increment(int& x)
+	{
 		++x;
 	}
 };

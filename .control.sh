@@ -16,8 +16,8 @@ case $i in
     Command=style
     shift # past argument=value
     ;;
-    -command=doc)
-    Command=doc
+    -command=doxygen)
+    Command=doxygen
     shift # past argument=value
     ;;
     -command=build)
@@ -59,32 +59,22 @@ case $Command in
         find src/ -name "*.h" -print0 | xargs -0 -r clang-tidy -p temp/build
         find src/ -name "*.hpp" -print0 | xargs -0 -r clang-tidy -p temp/build
         ;;
-    doc) # build both document and code document
-        # generate doxygen documentation
-        mkdir -p temp/doc
+    doxygen) # generate doxygen documentation
+        rm -rf temp/documentations/doxygen
+        mkdir -p temp/documentations/doxygen
         doxygen .doxyfile
-        mv -T temp/doc/html temp/doc/doxygen
+        mv -T temp/documentations/html temp/documentations/doxygen
         ;;
     build) # build
-        rm -rf temp
+        rm -rf temp/build
         cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug
         make --directory=temp/build -j$(nproc) all install
         ;;
     test) # test
-        rm -rf temp
-        cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug
-        make --directory=temp/build -j$(nproc) all install
-        ./temp/deploy/tests/test_main
-        # ctest --test-dir ./temp/build/test --output-on-failure --parallel $(nproc)
-        
-        # coverage
-        # cd runtime
-        # rm -rf coverages
-        # mkdir -p coverages
-        # gcovr -r ./.. -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --xml -o ./coverages/coverages.xml
-        # gcovr -r ./.. -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o ./coverages/coverages.html
-        # ;;
-        # GDB test code: gdb -ex "set env LD_LIBRARY_PATH /home/ivan/QT6.5.1/6.5.1/gcc_64/lib" -ex "run" ./CreepsWorldClient
+        rm -rf temp/documentations/coverages
+        mkdir -p temp/documentations/coverages
+        temp/build/bin/MainTests
+        temp/build/bin/MainBenchmarksgcovr -r . -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o temp/documentations/coverages/report_coverage.html
         ;;
     *)
         echo "Invalid Commandule specified: $Command" 

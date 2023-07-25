@@ -1,4 +1,7 @@
-###QT
+# Find OpenMP
+find_package(OpenMP REQUIRED)
+
+# Find QT
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Gui)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -15,10 +18,13 @@ set(PROJECT_EXECUTABLE_NAME ${PROJECT_NAME})
 add_executable(${PROJECT_EXECUTABLE_NAME} ${PROJECT_SOURCES})
 install(TARGETS ${PROJECT_EXECUTABLE_NAME} DESTINATION "deploy")
 
-###link QT lib
+# Link QT lib
 target_link_libraries(${PROJECT_EXECUTABLE_NAME} PRIVATE Qt6::Core)
 target_link_libraries(${PROJECT_EXECUTABLE_NAME} PRIVATE Qt6::Gui)
 target_link_libraries(${PROJECT_EXECUTABLE_NAME} PRIVATE Qt6::Widgets)
+
+# Link OpenMP lib
+target_link_libraries(${PROJECT_EXECUTABLE_NAME} PUBLIC OpenMP::OpenMP_CXX)
 
 # include(FetchContent)
 # FetchContent_Declare(
