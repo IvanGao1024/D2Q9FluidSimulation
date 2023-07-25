@@ -10,7 +10,7 @@ set(PROJECT_SOURCES
     main.cpp
     LatticeMainWindow.h
     LatticeMainWindow.cpp
-    core/Matrix.hpp
+    core/CartesianMatrix.hpp
     core/LatticeBoltzmannMethod.h
     core/LatticeBoltzmannMethod.cpp)
 

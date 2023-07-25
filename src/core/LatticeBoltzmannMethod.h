@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QDebug>
-#include "Matrix.hpp"
 
 class LatticeBoltzmannMethod: public QObject
 {
