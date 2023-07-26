@@ -28,8 +28,8 @@ case $i in
     Command=test
     shift # past argument=value
     ;;
-    -command=deploy)
-    Command=deploy
+    -command=run)
+    Command=run
     shift # past argument=value
     ;;
     -platform=linux)
@@ -76,6 +76,9 @@ case $Command in
         temp/build/bin/MainTests
         temp/build/bin/MainBenchmarks --benchmark_time_unit=ms
         gcovr -r . -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o temp/documentations/coverages/report_coverage.html
+        ;;
+    run) # run
+        temp/build/bin/FastFluidDynamicSimulationForGames
         ;;
     *)
         echo "Invalid Commandule specified: $Command" 

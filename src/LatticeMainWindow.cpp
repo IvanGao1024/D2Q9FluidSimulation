@@ -7,5 +7,5 @@ LatticeMainWindow::LatticeMainWindow(quint16 height, quint16 width, QWidget* par
 	mWidth(width)
 {
 	resize(mHeight, mWidth);
-	LatticeBoltzmannMethod mLattice(10, 10);
+	D2Q9(10000, 10000);
 }

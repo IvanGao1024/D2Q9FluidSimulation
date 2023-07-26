@@ -17,17 +17,30 @@ template<typename T>
 class CartesianMatrix
 {
 private:
+	static const unsigned int MATRIX_DEFAULT_HEIGHT = 1;
+	static const unsigned int MATRIX_DEFAULT_WIDTH  = 1;
+
+private:
 	std::pair<int, int> base{0, 0};
 	std::vector<T>      data;
 	int                 mWidth;
 	int                 mHeight;
 
-public:
+private:
 	struct Index {
 		int x, y;
 	};
 
+public:
 	enum Direction { UP, DOWN, LEFT, RIGHT };
+
+public:
+	CartesianMatrix()
+	{
+		mWidth  = MATRIX_DEFAULT_WIDTH;
+		mHeight = MATRIX_DEFAULT_HEIGHT;
+		data.resize(mWidth * mHeight, T());
+	}
 
 public:
 	CartesianMatrix(int width, int height, T initialValue = T()): mWidth(width), mHeight(height)
@@ -96,7 +109,38 @@ public:
 		validateIndex(base.first, base.second);
 	}
 
+	void fill(const T& value) {
+#pragma omp parallel for
+		for(size_t i = 0; i < data.size(); ++i) {
+			data[i] = value;
+		}
+	}
+
 public:  // helper
+	unsigned int getWidth() const
+	{
+		return mWidth;
+	}
+
+	unsigned int getHeight() const
+	{
+		return mHeight;
+	}
+	
+	void print()
+	{
+		std::cout << "---------------------- " << mWidth << "x" << mHeight << " ----------------------\n";
+		for(int i = mHeight - 1; i >= 0; --i) {
+			for(int j = 0; j < mWidth; ++j) {
+				std::cout << (*this)[{j, i}];
+				if(j != mWidth - 1) {
+					std::cout << " | ";
+				}
+			}
+			std::cout << '\n';
+		}
+	}
+
 	void validateIndex(int columnX, int rowY) const
 	{
 		if(columnX < 0 || columnX >= mWidth || rowY < 0 || rowY >= mHeight) {
@@ -112,20 +156,6 @@ public:  // helper
 		case LEFT: return {1, 0};
 		case RIGHT: return {-1, 0};
 		default: return {0, 0};
-		}
-	}
-
-	void print()
-	{
-		std::cout << "---------------------- " << mWidth << "x" << mHeight << " ----------------------\n";
-		for(int i = mHeight - 1; i >= 0; --i) {
-			for(int j = 0; j < mWidth; ++j) {
-				std::cout << (*this)[{j, i}];
-				if(j != mWidth - 1) {
-					std::cout << " | ";
-				}
-			}
-			std::cout << '\n';
 		}
 	}
 };

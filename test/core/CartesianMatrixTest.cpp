@@ -13,12 +13,19 @@ protected:
 
 // constructor/at
 TEST_F(CartesianMatrixTest, ConstructorInitiationTest) {
+    CartesianMatrix<int> m0;
+    EXPECT_EQ(m0.getWidth(), 1);
+    EXPECT_EQ(m0.getHeight(), 1);
+    
     CartesianMatrix<int> m1(20,20);
     EXPECT_EQ(m1.at({5,5}), 0);
     CartesianMatrix<int> m2(20,20, 0);
     EXPECT_EQ(m2.at({5,5}), 0);
     CartesianMatrix<int> m3(20,20, 1);
     EXPECT_EQ(m3.at({5,5}), 1);
+    m3.fill(0);
+    EXPECT_EQ(m3.at({5,5}), 0);
+    EXPECT_EQ(m3.at({19,19}), 0);
 }
 
 // ==/at/[]/exception
@@ -147,5 +154,4 @@ TEST_F(CartesianMatrixTest, BaseShiftTest) {
     // Cast an out-of-range integer to Direction to force test on the default case:
     auto shiftDefault = m1.getShift(static_cast<CartesianMatrix<int>::Direction>(999));
     EXPECT_EQ(shiftDefault, std::make_pair(0, 0));
-
 }
