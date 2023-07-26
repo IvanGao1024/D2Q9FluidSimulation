@@ -25,6 +25,8 @@ TEST_F(CartesianMatrixTest, ConstructorInitiationTest) {
 TEST_F(CartesianMatrixTest, OperatorTest) {
     CartesianMatrix<int> m1(5,5);
     CartesianMatrix<int> m2(5,5);
+    CartesianMatrix<int> m3(6,6);
+    CartesianMatrix<int> m4(5,6);
 
     // ==
     EXPECT_TRUE(m1 == m2);
@@ -34,6 +36,8 @@ TEST_F(CartesianMatrixTest, OperatorTest) {
     EXPECT_THROW(m1.at({5,5}), std::out_of_range);
     EXPECT_THROW(m1.at({4,5}), std::out_of_range);
     EXPECT_THROW(m1.at({5,4}), std::out_of_range);
+    EXPECT_THROW(m1.at({-1,3}), std::out_of_range);
+    EXPECT_THROW(m1.at({3,-1}), std::out_of_range);
     EXPECT_THROW(m1.batchRevisionX(5, 1), std::out_of_range);
     EXPECT_NO_THROW(m1.batchRevisionX(4, 1));
     EXPECT_THROW(m1.batchRevisionY(5, 1), std::out_of_range);
@@ -44,6 +48,9 @@ TEST_F(CartesianMatrixTest, OperatorTest) {
     m1[{4,4}] = 5;
     // m1.print();
     EXPECT_EQ(m1.at({4,4}), 5);
+    EXPECT_NE(m1, m2);
+    EXPECT_NE(m1, m3);
+    EXPECT_NE(m1, m4);
 }
 
 TEST_F(CartesianMatrixTest, BatchRevisionTest){
@@ -136,4 +143,9 @@ TEST_F(CartesianMatrixTest, BaseShiftTest) {
     m4.baseShift(CartesianMatrix<int>::Direction::RIGHT);
     EXPECT_EQ(m4.at({4,0}), 0);
     EXPECT_EQ(m4.at({0,0}), 1);
+
+    // Cast an out-of-range integer to Direction to force test on the default case:
+    auto shiftDefault = m1.getShift(static_cast<CartesianMatrix<int>::Direction>(999));
+    EXPECT_EQ(shiftDefault, std::make_pair(0, 0));
+
 }

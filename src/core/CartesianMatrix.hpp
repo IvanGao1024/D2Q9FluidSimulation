@@ -49,6 +49,11 @@ public:
 		return true;
 	}
 
+	bool operator!=(const CartesianMatrix<T>& other) const
+	{
+		return !(*this == other);
+	}
+
 	T& operator[](Index index)
 	{
 		validateIndex(index.x, index.y);
