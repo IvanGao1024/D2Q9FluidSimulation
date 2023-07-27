@@ -109,7 +109,8 @@ public:
 		validateIndex(base.first, base.second);
 	}
 
-	void fill(const T& value) {
+	void fill(const T& value)
+	{
 #pragma omp parallel for
 		for(size_t i = 0; i < data.size(); ++i) {
 			data[i] = value;
@@ -126,7 +127,7 @@ public:  // helper
 	{
 		return mHeight;
 	}
-	
+
 	void print()
 	{
 		std::cout << "---------------------- " << mWidth << "x" << mHeight << " ----------------------\n";

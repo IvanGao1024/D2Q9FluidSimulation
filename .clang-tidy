@@ -25,7 +25,8 @@ Checks: 'clang-analyzer-apiModeling.StdCLibraryFunctions,
          clang-analyzer-unix.cstring.BadSizeArg,
          clang-analyzer-unix.cstring.NullArg,
          readability-*,
-         -readability-redundant-access-specifiers'
+         -readability-redundant-access-specifiers,
+         -readability-identifier-length'
 WarningsAsErrors: ''
 HeaderFilterRegex: 'src/.*\.(h|cpp|hpp)'
 FormatStyle: none

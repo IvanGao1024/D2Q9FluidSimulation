@@ -2,7 +2,6 @@
 #define LATTICE_MAINWINDOW
 
 #include <QMainWindow>
-#include "core/LatticeBoltzmannMethod/D2Q9.h"
 
 class LatticeMainWindow: public QMainWindow
 {
