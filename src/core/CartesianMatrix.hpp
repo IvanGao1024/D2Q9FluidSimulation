@@ -26,12 +26,11 @@ private:
 	int                 mWidth;
 	int                 mHeight;
 
-private:
+public:
 	struct Index {
 		int x, y;
 	};
 
-public:
 	enum Direction { UP, DOWN, LEFT, RIGHT };
 
 public:
@@ -43,7 +42,7 @@ public:
 	}
 
 public:
-	CartesianMatrix(int width, int height, T initialValue = T()): mWidth(width), mHeight(height)
+	CartesianMatrix(unsigned int width, unsigned int height, T initialValue = T()): mWidth(width), mHeight(height)
 	{
 		data.resize(mWidth * mHeight, initialValue);
 	}
@@ -75,6 +74,15 @@ public:
 		return data[newY * mWidth + newX];
 	}
 
+	CartesianMatrix<T>& operator*(const double& value)
+	{
+#pragma omp parallel for
+		for(int i = 0; i < data.size(); ++i)
+			data[i] *= value;
+		return *this;
+	}
+
+public:
 	T at(Index index) const
 	{
 		validateIndex(index.x, index.y);
@@ -128,7 +136,7 @@ public:  // helper
 		return mHeight;
 	}
 
-	void print()
+	void print() const
 	{
 		std::cout << "---------------------- " << mWidth << "x" << mHeight << " ----------------------\n";
 		for(int i = mHeight - 1; i >= 0; --i) {

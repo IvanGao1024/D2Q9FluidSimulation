@@ -1,39 +1,40 @@
 #include <benchmark/benchmark.h>
 #include "../../src/core/CartesianMatrix.hpp"
+class CartesianMatrixFixture : public ::benchmark::Fixture {
+public:
+    void SetUp(const ::benchmark::State& state) {
+        m = new CartesianMatrix<double>(10000, 10000);
+    }
 
-static void largeCartesianMatrixInitializationBenchmark(benchmark::State& state) {
+    void TearDown(const ::benchmark::State& state) {
+        delete m;
+    }
+
+protected:
+    CartesianMatrix<double>* m;
+};
+
+BENCHMARK_DEFINE_F(CartesianMatrixFixture, LargeSizeInitialization)
+(benchmark::State& state) {
     for (auto _ : state) {
-        CartesianMatrix<float> m(10000, 10000);
+        *m = CartesianMatrix<double>(10000, 10000, 1.0);
     }
 }
-BENCHMARK(largeCartesianMatrixInitializationBenchmark);
+BENCHMARK_REGISTER_F(CartesianMatrixFixture, LargeSizeInitialization);
 
-static void largeCartesianMatrixArrayInitializationBenchmark(benchmark::State& state) {
-    CartesianMatrix<float> m[9];
-    for (int i = 0; i < 9; ++i) { 
-        m[i] = CartesianMatrix<float>(10000, 10000);
-    }
+BENCHMARK_DEFINE_F(CartesianMatrixFixture, ElementWiseMultiplication)
+(benchmark::State& state) {
     for (auto _ : state) {
-#pragma omp parallel for 
-        for(int i = 0; i < 9; ++i) {
-            m[i].fill(0.0F);
-        }
+        *m * 0.333;
     }
 }
-BENCHMARK(largeCartesianMatrixArrayInitializationBenchmark);
+BENCHMARK_REGISTER_F(CartesianMatrixFixture, ElementWiseMultiplication);
 
-static void batchRevisionXBenchmark(benchmark::State& state) {
-    CartesianMatrix<float> m(10000, 10000);
+BENCHMARK_DEFINE_F(CartesianMatrixFixture, BatchRevisionBenchmark)
+(benchmark::State& state) {
     for (auto _ : state) {
-        m.batchRevisionX(2532, 6);
+        m->batchRevisionX(2532, 6);
+        m->batchRevisionY(2532, 6);
     }
 }
-BENCHMARK(batchRevisionXBenchmark);
-
-static void batchRevisionYBenchmark(benchmark::State& state) {
-    CartesianMatrix<float> m(10000, 10000);
-    for (auto _ : state) {
-        m.batchRevisionY(2532, 6);
-    }
-}
-BENCHMARK(batchRevisionYBenchmark);
+BENCHMARK_REGISTER_F(CartesianMatrixFixture, BatchRevisionBenchmark);

@@ -3,6 +3,7 @@
 
 #include "CartesianMatrix.hpp"
 
+#include <omp.h>  // For OpenMP
 class LatticeBoltzmannMethodD2Q9
 {
 	// D2Q9 Meta data
@@ -16,17 +17,17 @@ class LatticeBoltzmannMethodD2Q9
 	// - f_7 corresonding to speed c(-1,-1)
 	// - f_8 corresonding to speed c(1,-1)
 private:
-	static inline constexpr unsigned int         MATRIX_SIZE             = 9;  // the number of direction
-	static inline constexpr unsigned int         DT                      = 1;
-	static inline constexpr unsigned int         DX                      = 1;
-	static inline constexpr unsigned int         DY                      = 1;
-	static inline constexpr unsigned int         D                       = 2 + 1;
-	static inline constexpr unsigned int         K_SIZE                  = 9;
-	static inline constexpr unsigned int         C_SPEED_SQUARED_INVERSE = 3;  // Assume dx = dy = dt
-	static inline constexpr std::array<float, 9> WEIGHT =
-		{1.0F / 9, 1.0F / 9, 1.0F / 9, 1.0F / 9, 1.0F / 36, 1.0F / 36, 1.0F / 36, 1.0F / 36, 4.0F / 9};
+	static inline constexpr unsigned int          MATRIX_SIZE             = 9;  // the number of direction
+	static inline constexpr unsigned int          DT                      = 1;
+	static inline constexpr unsigned int          DX                      = 1;
+	static inline constexpr unsigned int          DY                      = 1;
+	static inline constexpr unsigned int          D                       = 2 + 1;
+	static inline constexpr unsigned int          K_SIZE                  = 9;
+	static inline constexpr unsigned int          C_SPEED_SQUARED_INVERSE = 3;  // Assume dx = dy = dt
+	static inline constexpr std::array<double, 9> WEIGHT =
+		{4.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 36, 1.0 / 36, 1.0 / 36, 1.0 / 36};
 	static inline constexpr std::array<std::pair<int, int>, 9> C = {{std::make_pair(0, 0),
-                                                                     std::make_pair(1, 0),
+																	 std::make_pair(1, 0),
 																	 std::make_pair(0, 1),
 																	 std::make_pair(-1, 0),
 																	 std::make_pair(0, -1),
@@ -34,23 +35,92 @@ private:
 																	 std::make_pair(-1, 1),
 																	 std::make_pair(-1, -1),
 																	 std::make_pair(1, -1)}};
-	float mOmega_m;
-	float mOmega_s;
-
-private:
-	CartesianMatrix<float>  mDensity[MATRIX_SIZE];
-	CartesianMatrix<float>  mTemperature[MATRIX_SIZE];
-	CartesianMatrix<std::pair<float, float>>  mVelocity;
-	CartesianMatrix<float> *pDensityMatrix;
-	CartesianMatrix<float> *pTemperatureMatrix;
-	CartesianMatrix<float> *pVelocityMatrix;
 
 public:
-	LatticeBoltzmannMethodD2Q9(unsigned int height, unsigned int width,
-		   CartesianMatrix<float> *DensityMatrix,
-		   CartesianMatrix<float> *TemperatureMatrix,
-		   CartesianMatrix<float> *VelocityMatrix,
-		   float                   kinematicViscosity,
-		   float                   diffusionCoefficient);
+	struct Velocity {
+		double U;  // Horizontal velocity component
+		double V;  // Vertical velocity component
+	};
+
+	enum BoundaryType { NO, BOUNCEBACK, OPEN, CONSTANT, ADIABATIC };
+	struct Boundary {
+		BoundaryType boundary;
+		int          parameter1;
+		int          parameter2;
+
+		Boundary(): boundary(BoundaryType::NO), parameter1(0), parameter2(0)
+		{
+		}
+		Boundary(BoundaryType type): boundary(type), parameter1(0), parameter2(0)
+		{
+		}
+		Boundary(BoundaryType type, int param1): boundary(type), parameter1(param1), parameter2(0)
+		{
+		}
+		Boundary(BoundaryType type, int param1, int param2): boundary(type), parameter1(param1), parameter2(param2)
+		{
+		}
+	};
+
+	struct Entity {
+		Boundary mTop;
+		Boundary mBottom;
+		Boundary mLeft;
+		Boundary mRight;
+
+		Entity(Boundary bound)
+		{
+			mTop    = bound;
+			mBottom = bound;
+			mLeft   = bound;
+			mRight  = bound;
+		}
+
+		Entity(Boundary top, Boundary bottom, Boundary left, Boundary right)
+		{
+			mTop    = top;
+			mBottom = bottom;
+			mLeft   = left;
+			mRight  = right;
+		}
+	};
+
+private:
+	unsigned int              mHeight;
+	unsigned int              mWidth;
+	Boundary                  mTop;
+	Boundary                  mBottom;
+	Boundary                  mLeft;
+	Boundary                  mRight;
+	CartesianMatrix<double>   mDensity[MATRIX_SIZE];
+	CartesianMatrix<double>   mTemperature[MATRIX_SIZE];
+	CartesianMatrix<Velocity> mVelocity;
+
+public:
+	std::vector<Entity>     mEntities;
+	CartesianMatrix<double> mKinematicViscosityMatrix;
+	CartesianMatrix<double> mDiffusionCoefficientMatrix;
+	CartesianMatrix<double> mSourceDensityMatrix;
+	CartesianMatrix<double> mSourceTemperatureMatrix;
+
+public:
+	LatticeBoltzmannMethodD2Q9(unsigned int                             height,
+							   unsigned int                             width,
+							   Boundary                                 top,
+							   Boundary                                 bottom,
+							   Boundary                                 left,
+							   Boundary                                 right,
+							   std::unique_ptr<CartesianMatrix<double>> initialDensityMatrix,
+							   std::unique_ptr<CartesianMatrix<double>> initialTemperatureMatrix,
+							   std::unique_ptr<CartesianMatrix<double>> initialKinematicViscosityMatrix,
+							   std::unique_ptr<CartesianMatrix<double>> initialDiffusionCoefficientMatrix,
+							   std::unique_ptr<CartesianMatrix<double>> initialSourceDensityMatrix,
+							   std::unique_ptr<CartesianMatrix<double>> initialSourceTemperatureMatrix,
+							   std::vector<Entity>                      entities = std::vector<Entity>());
+
+	void step(std::unique_ptr<CartesianMatrix<Velocity>> SourceVelocityMatrix);
+
+private:  // helper
+	void updateVelocityMatrix();
 };
 #endif  // LATTICE_BOLTZMANN_METHOD_D2Q9

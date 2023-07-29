@@ -71,6 +71,7 @@ case $Command in
         make --directory=temp/build -j$(nproc) all install
         ;;
     test) # test
+        # valgrind --tool=memcheck --leak-check=yes ./temp/build/bin/MainBenchmarks --benchmark_filter=LatticeBoltzmannMethodD2Q9_InitiationBenchmark
         rm -rf temp/documentations/coverages
         mkdir -p temp/documentations/coverages
         temp/build/bin/MainTests
