@@ -86,22 +86,32 @@ public:
 	};
 
 private:
-	unsigned int              mHeight;
-	unsigned int              mWidth;
-	Boundary                  mTop;
-	Boundary                  mBottom;
-	Boundary                  mLeft;
-	Boundary                  mRight;
-	CartesianMatrix<double>   mDensity[MATRIX_SIZE];
-	CartesianMatrix<double>   mTemperature[MATRIX_SIZE];
+	unsigned int mHeight;
+	unsigned int mWidth;
+	Boundary     mTop;
+	Boundary     mBottom;
+	Boundary     mLeft;
+	Boundary     mRight;
+	// Internal data
+	CartesianMatrix<double> mDensity[MATRIX_SIZE];
+	CartesianMatrix<double> mTemperature[MATRIX_SIZE];
+	// Derived data
 	CartesianMatrix<Velocity> mVelocity;
 
+public:  // Pre allocate memory for output
+	CartesianMatrix<double> mResultingDensityMatrix;
+	CartesianMatrix<double> mResultingTemperatureMatrix;
+
 public:
-	std::vector<Entity>     mEntities;
+	// Blocks
+	std::vector<Entity> mEntities;
+	// Parameter
 	CartesianMatrix<double> mKinematicViscosityMatrix;
 	CartesianMatrix<double> mDiffusionCoefficientMatrix;
-	CartesianMatrix<double> mSourceDensityMatrix;
-	CartesianMatrix<double> mSourceTemperatureMatrix;
+	// Source Matrix
+	CartesianMatrix<double>   mDensitySourceMatrix;
+	CartesianMatrix<double>   mTemperatureSourceMatrix;
+	CartesianMatrix<Velocity> mVelocitySourceMatrix;
 
 public:
 	LatticeBoltzmannMethodD2Q9(unsigned int                             height,
@@ -118,9 +128,11 @@ public:
 							   std::unique_ptr<CartesianMatrix<double>> initialSourceTemperatureMatrix,
 							   std::vector<Entity>                      entities = std::vector<Entity>());
 
-	void step(std::unique_ptr<CartesianMatrix<Velocity>> SourceVelocityMatrix);
+	void step(std::unique_ptr<CartesianMatrix<Velocity>> SourceVelocityMatrix = nullptr);
 
 private:  // helper
 	void updateVelocityMatrix();
+	void buildResultDensityMatrix();
+	void buildResultTemperatureMatrix();
 };
 #endif  // LATTICE_BOLTZMANN_METHOD_D2Q9

@@ -48,6 +48,17 @@ public:
 	}
 
 public:
+	CartesianMatrix<T>& operator=(const CartesianMatrix<T>& rhs)
+	{
+		if(this != &rhs) {  // Avoid self-assignment
+			this->base    = rhs.base;
+			this->data    = rhs.data;
+			this->mWidth  = rhs.mWidth;
+			this->mHeight = rhs.mHeight;
+		}
+		return *this;
+	}
+
 	bool operator==(const CartesianMatrix<T>& other) const
 	{
 		if(mWidth != other.mWidth || mHeight != other.mHeight) {
@@ -74,12 +85,27 @@ public:
 		return data[newY * mWidth + newX];
 	}
 
-	CartesianMatrix<T>& operator*(const double& value)
+	CartesianMatrix<T> operator*(const double& value)
 	{
+		CartesianMatrix<T> result(*this);
 #pragma omp parallel for
-		for(int i = 0; i < data.size(); ++i)
-			data[i] *= value;
-		return *this;
+		for(int i = 0; i < result.data.size(); ++i)
+			result.data[i] *= value;
+		return result;
+	}
+
+	CartesianMatrix<T> operator+(const CartesianMatrix<T>& rhs)
+	{
+		if(this->data.size() != rhs.data.size()) {
+			throw std::invalid_argument("Dimention mismatch");
+		}
+		CartesianMatrix<T> result(*this);
+#pragma omp parallel for
+		for(size_t i = 0; i < result.data.size(); ++i) {
+			result.data[i] += rhs.data[i];
+		}
+
+		return result;
 	}
 
 public:
@@ -136,20 +162,6 @@ public:  // helper
 		return mHeight;
 	}
 
-	void print() const
-	{
-		std::cout << "---------------------- " << mWidth << "x" << mHeight << " ----------------------\n";
-		for(int i = mHeight - 1; i >= 0; --i) {
-			for(int j = 0; j < mWidth; ++j) {
-				std::cout << (*this)[{j, i}];
-				if(j != mWidth - 1) {
-					std::cout << " | ";
-				}
-			}
-			std::cout << '\n';
-		}
-	}
-
 	void validateIndex(int columnX, int rowY) const
 	{
 		if(columnX < 0 || columnX >= mWidth || rowY < 0 || rowY >= mHeight) {
@@ -165,6 +177,20 @@ public:  // helper
 		case LEFT: return {1, 0};
 		case RIGHT: return {-1, 0};
 		default: return {0, 0};
+		}
+	}
+
+	void print() const
+	{
+		std::cout << "---------------------- " << mWidth << "x" << mHeight << " ----------------------\n";
+		for(int i = mHeight - 1; i >= 0; --i) {
+			for(int j = 0; j < mWidth; ++j) {
+				std::cout << (*this).at({j, i});
+				if(j != mWidth - 1) {
+					std::cout << " | ";
+				}
+			}
+			std::cout << '\n';
 		}
 	}
 };

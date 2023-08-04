@@ -22,6 +22,7 @@ static void LatticeBoltzmannMethodD2Q9_Diffusion(benchmark::State& state) {
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+        lbm.step();
     }
 }
 BENCHMARK(LatticeBoltzmannMethodD2Q9_Diffusion);

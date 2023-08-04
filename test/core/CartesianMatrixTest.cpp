@@ -34,7 +34,6 @@ TEST_F(CartesianMatrixTest, OperatorTest) {
     CartesianMatrix<int> m2(5,5);
     CartesianMatrix<int> m3(6,6);
     CartesianMatrix<int> m4(5,6);
-
     // ==
     EXPECT_TRUE(m1 == m2);
     EXPECT_EQ(m1, m2);
@@ -58,6 +57,21 @@ TEST_F(CartesianMatrixTest, OperatorTest) {
     EXPECT_NE(m1, m2);
     EXPECT_NE(m1, m3);
     EXPECT_NE(m1, m4);
+
+    // * and +
+    CartesianMatrix<int> m5(5,5);
+    CartesianMatrix<int> m6(5,5);
+    CartesianMatrix<int> m7(5,5);
+    CartesianMatrix<int> m8(5,5);
+    m5.batchRevisionX(1, 5);
+    m5.batchRevisionY(1, 5);
+    m5[{1, 1}] = 10;
+    m6.batchRevisionX(1, 10);
+    m7.batchRevisionX(1, 5);
+    m8.batchRevisionY(1, 5);
+    EXPECT_EQ(m5, m7 + m8);
+    EXPECT_EQ(m6, m7 * 2);
+    EXPECT_THROW(m7 + m3, std::invalid_argument);
 }
 
 TEST_F(CartesianMatrixTest, BatchRevisionTest){

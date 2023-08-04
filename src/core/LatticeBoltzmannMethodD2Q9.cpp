@@ -3,6 +3,8 @@
 #include <omp.h>
 #include <cassert>
 
+#include "HeatMap.hpp"
+
 LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 	unsigned int                             height,
 	unsigned int                             width,
@@ -63,6 +65,18 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 	{
 #pragma omp section
 		{
+			mVelocity = CartesianMatrix<Velocity>(width + 2, height + 2);
+		}
+#pragma omp section
+		{
+			mResultingTemperatureMatrix = CartesianMatrix<double>(width + 2, height + 2);
+		}
+#pragma omp section
+		{
+			mResultingDensityMatrix = CartesianMatrix<double>(width + 2, height + 2);
+		}
+#pragma omp section
+		{
 			if(initialKinematicViscosityMatrix) {
 				assert(initialKinematicViscosityMatrix->getHeight() == height + 2 &&
 					   initialKinematicViscosityMatrix->getWidth() == width + 2);
@@ -89,10 +103,9 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 			if(initialSourceDensityMatrix) {
 				assert(initialSourceDensityMatrix->getHeight() == height + 2 &&
 					   initialSourceDensityMatrix->getWidth() == width + 2);
-				mSourceDensityMatrix = *initialSourceDensityMatrix;
+				mDensitySourceMatrix = *initialSourceDensityMatrix;
 			} else {
-				mSourceDensityMatrix =
-					CartesianMatrix<double>(width + 2, height + 2, 2.0e-5);  // Air at 20 degree celsius
+				mDensitySourceMatrix = CartesianMatrix<double>(width + 2, height + 2);
 			}
 		}
 #pragma omp section
@@ -100,11 +113,14 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 			if(initialSourceTemperatureMatrix) {
 				assert(initialSourceTemperatureMatrix->getHeight() == height + 2 &&
 					   initialSourceTemperatureMatrix->getWidth() == width + 2);
-				mSourceTemperatureMatrix = *initialSourceTemperatureMatrix;
+				mTemperatureSourceMatrix = *initialSourceTemperatureMatrix;
 			} else {
-				mSourceTemperatureMatrix =
-					CartesianMatrix<double>(width + 2, height + 2, 2.0e-5);  // Air at 20 degree celsius
+				mTemperatureSourceMatrix = CartesianMatrix<double>(width + 2, height + 2);
 			}
+		}
+#pragma omp section
+		{
+			mVelocitySourceMatrix = CartesianMatrix<Velocity>(width + 2, height + 2);
 		}
 	}
 
@@ -123,10 +139,34 @@ void LatticeBoltzmannMethodD2Q9::step(std::unique_ptr<CartesianMatrix<Velocity>>
 
 	// mOmega_m = 1.0 / (((D * kinematicViscosity) / ((DX * DX) / DT)) + 0.5);
 	// mOmega_s = 1.0 / (((D * diffusionCoefficient) / ((DX * DX) / DT)) + 0.5);
+	buildResultDensityMatrix();
+	buildResultTemperatureMatrix();
+	HeatMap::createHeatMap(mResultingDensityMatrix, "density");
+	HeatMap::createHeatMap(mResultingTemperatureMatrix, "temperature");
 }
 
 void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()
 {
 	// TODO: stub
 	mVelocity = CartesianMatrix<Velocity>(mWidth + 2, mHeight + 2);
+}
+
+void LatticeBoltzmannMethodD2Q9::buildResultDensityMatrix()
+{
+	mResultingDensityMatrix.fill(0);
+
+#pragma omp parallel for
+	for(int i = 0; i < MATRIX_SIZE; i++) {
+		mResultingDensityMatrix = mResultingDensityMatrix + (mDensity[i] * WEIGHT[i]);
+	}
+}
+
+void LatticeBoltzmannMethodD2Q9::buildResultTemperatureMatrix()
+{
+	mResultingTemperatureMatrix.fill(0);
+
+#pragma omp parallel for
+	for(int i = 0; i < MATRIX_SIZE; i++) {
+		mResultingTemperatureMatrix = mResultingTemperatureMatrix + (mTemperature[i] * WEIGHT[i]);
+	}
 }
