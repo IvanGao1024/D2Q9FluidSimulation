@@ -133,28 +133,51 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 	initialSourceTemperatureMatrix.reset();
 }
 
-void LatticeBoltzmannMethodD2Q9::step(std::unique_ptr<CartesianMatrix<Velocity>> SourceVelocityMatrix)
+void LatticeBoltzmannMethodD2Q9::step(bool buildResult, bool saveImage)
 {
 	updateVelocityMatrix();
+	collision();
+	streaming();
+	if (buildResult) {
+		buildResultDensityMatrix();
+		buildResultTemperatureMatrix();
+	}
+	if(saveImage) {
+		//TODO: verify heat map works
+		HeatMap::createHeatMap(mResultingDensityMatrix, "density");
+		HeatMap::createHeatMap(mResultingTemperatureMatrix, "temperature");
+	}
+}
+
+void LatticeBoltzmannMethodD2Q9::collision()
+{
+	// TODO
+	// CartesianMatrix<Velocity> mVelocity;
+	// CartesianMatrix<double>   mKinematicViscosityMatrix;
+	// CartesianMatrix<double>   mDiffusionCoefficientMatrix;
+	// // Source Matrix
+	// CartesianMatrix<double> mDensitySourceMatrix;
+	// CartesianMatrix<double> mTemperatureSourceMatrix;
 
 	// mOmega_m = 1.0 / (((D * kinematicViscosity) / ((DX * DX) / DT)) + 0.5);
 	// mOmega_s = 1.0 / (((D * diffusionCoefficient) / ((DX * DX) / DT)) + 0.5);
-	buildResultDensityMatrix();
-	buildResultTemperatureMatrix();
-	HeatMap::createHeatMap(mResultingDensityMatrix, "density");
-	HeatMap::createHeatMap(mResultingTemperatureMatrix, "temperature");
+
+}
+
+void LatticeBoltzmannMethodD2Q9::streaming()
+{
+	// TODO
 }
 
 void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()
 {
 	// TODO: stub
-	mVelocity = CartesianMatrix<Velocity>(mWidth + 2, mHeight + 2);
+	mVelocity = mVelocitySourceMatrix;
 }
 
 void LatticeBoltzmannMethodD2Q9::buildResultDensityMatrix()
 {
 	mResultingDensityMatrix.fill(0);
-
 #pragma omp parallel for
 	for(int i = 0; i < MATRIX_SIZE; i++) {
 		mResultingDensityMatrix = mResultingDensityMatrix + (mDensity[i] * WEIGHT[i]);
@@ -164,7 +187,6 @@ void LatticeBoltzmannMethodD2Q9::buildResultDensityMatrix()
 void LatticeBoltzmannMethodD2Q9::buildResultTemperatureMatrix()
 {
 	mResultingTemperatureMatrix.fill(0);
-
 #pragma omp parallel for
 	for(int i = 0; i < MATRIX_SIZE; i++) {
 		mResultingTemperatureMatrix = mResultingTemperatureMatrix + (mTemperature[i] * WEIGHT[i]);

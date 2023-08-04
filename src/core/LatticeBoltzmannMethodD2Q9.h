@@ -128,7 +128,11 @@ public:
 							   std::unique_ptr<CartesianMatrix<double>> initialSourceTemperatureMatrix,
 							   std::vector<Entity>                      entities = std::vector<Entity>());
 
-	void step(std::unique_ptr<CartesianMatrix<Velocity>> SourceVelocityMatrix = nullptr);
+	void step(bool buildResult = false, bool saveImage = false);
+
+private:
+	void collision();
+	void streaming();
 
 private:  // helper
 	void updateVelocityMatrix();
