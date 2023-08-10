@@ -37,11 +37,6 @@ private:
 																	 std::make_pair(1, -1)}};
 
 public:
-	struct Velocity {
-		double U;  // Horizontal velocity component
-		double V;  // Vertical velocity component
-	};
-
 	enum BoundaryType { NO, BOUNCEBACK, OPEN, CONSTANT, ADIABATIC };
 	struct Boundary {
 		BoundaryType boundary;
@@ -96,7 +91,10 @@ private:
 	CartesianMatrix<double> mDensity[MATRIX_SIZE];
 	CartesianMatrix<double> mTemperature[MATRIX_SIZE];
 	// Derived data
-	CartesianMatrix<Velocity> mVelocity;
+	CartesianMatrix<double> mVelocityU;
+	CartesianMatrix<double> mVelocityV;
+	CartesianMatrix<double> Result1;
+	CartesianMatrix<double> Result2;
 
 public:  // Pre allocate memory for output
 	CartesianMatrix<double> mResultingDensityMatrix;
@@ -109,9 +107,10 @@ public:
 	CartesianMatrix<double> mKinematicViscosityMatrix;
 	CartesianMatrix<double> mDiffusionCoefficientMatrix;
 	// Source Matrix
-	CartesianMatrix<double>   mDensitySourceMatrix;
-	CartesianMatrix<double>   mTemperatureSourceMatrix;
-	CartesianMatrix<Velocity> mVelocitySourceMatrix;
+	CartesianMatrix<double> mDensitySourceMatrix;
+	CartesianMatrix<double> mTemperatureSourceMatrix;
+	CartesianMatrix<double> mVelocityUSourceMatrix;
+	CartesianMatrix<double> mVelocityVSourceMatrix;
 
 public:
 	LatticeBoltzmannMethodD2Q9(unsigned int                             height,

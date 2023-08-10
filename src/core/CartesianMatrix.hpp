@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <execution>
 #include <iostream>
+#include <random>
+#include <type_traits>
 
 /**
  * @brief The origin is at (0,0), located at the bottom left,
@@ -41,10 +43,36 @@ public:
 		data.resize(mWidth * mHeight, T());
 	}
 
-public:
-	CartesianMatrix(unsigned int width, unsigned int height, T initialValue = T()): mWidth(width), mHeight(height)
+	CartesianMatrix(unsigned int nRow, unsigned int nColumn, T initialValue = T()): mWidth(nColumn), mHeight(nRow)
 	{
 		data.resize(mWidth * mHeight, initialValue);
+	}
+
+	CartesianMatrix(unsigned int nRow, unsigned int nColumn, const std::vector<std::vector<T>>& values)
+    : mWidth(nColumn), mHeight(nRow)
+	{
+		if (values.empty()) {
+			data.resize(mWidth * mHeight, T());
+		} else {
+			data.resize(mWidth * mHeight);
+			
+			// Checking row count
+			assert(values.size() == nRow && "Row count mismatch");
+
+			#pragma omp parallel for
+			for (size_t i = 0; i < values.size(); i++)
+			{
+				// Checking column count for each row
+				assert(values[i].size() == nColumn && "Column count mismatch for a specific row");
+			}
+
+			#pragma omp parallel for collapse(2)
+			for(size_t i = 0; i < mHeight; ++i) {
+				for(size_t j = 0; j < mWidth; ++j) {
+					data[i * mWidth + j] = values[i][j];
+				}
+			}
+		}
 	}
 
 public:
@@ -94,10 +122,51 @@ public:
 		return result;
 	}
 
+	CartesianMatrix<T> operator*(const int& value)
+	{
+		CartesianMatrix<T> result(*this);
+#pragma omp parallel for
+		for(int i = 0; i < result.data.size(); ++i)
+			result.data[i] *= value;
+		return result;
+	}
+
+	CartesianMatrix<T> operator*(const unsigned int& value)
+	{
+		CartesianMatrix<T> result(*this);
+#pragma omp parallel for
+		for(int i = 0; i < result.data.size(); ++i)
+			result.data[i] *= value;
+		return result;
+	}
+
+	CartesianMatrix<T> operator*(const CartesianMatrix<T>& other)
+	{
+		if(mWidth != other.mHeight) {
+			throw std::out_of_range(
+				"Dimension mismatch: The number of rows in the first matrix must equal the number of columns in the second.");
+		}
+
+		CartesianMatrix<T> result(mHeight, other.mWidth);  // Adjusting the size based on the usual matrix multiplication rules
+
+		#pragma omp parallel for collapse(2)
+		for(int y = 0; y < mHeight; ++y) {
+			for(int x = 0; x < other.mWidth; ++x) {
+				T sum = 0;
+				for(int k = 0; k < mWidth; ++k) {
+					sum += (*this).at({k, mHeight - 1 - y}) * other.at({x, other.mHeight - 1 - k}); 
+				}
+				result[{x, mHeight - 1 - y}] = sum;  // Using Cartesian coordinates
+			}
+		}
+
+		return result;
+	}
+
 	CartesianMatrix<T> operator+(const CartesianMatrix<T>& rhs)
 	{
 		if(this->data.size() != rhs.data.size()) {
-			throw std::invalid_argument("Dimention mismatch");
+			throw std::out_of_range("Dimention mismatch");
 		}
 		CartesianMatrix<T> result(*this);
 #pragma omp parallel for
@@ -151,6 +220,30 @@ public:
 		}
 	}
 
+	void fillRandom()
+	{
+		static_assert(std::is_arithmetic<T>::value, "Template type T must be numeric");
+
+		std::random_device rd;
+		std::mt19937       gen(rd());
+
+		if constexpr(std::is_integral<T>::value) {
+			std::uniform_int_distribution<T> dist(0, 2147483647);
+
+#pragma omp parallel for
+			for(size_t i = 0; i < data.size(); ++i) {
+				data[i] = dist(gen);
+			}
+		} else if constexpr(std::is_floating_point<T>::value) {
+			std::uniform_real_distribution<T> dist(0, 1);
+
+#pragma omp parallel for
+			for(size_t i = 0; i < data.size(); ++i) {
+				data[i] = dist(gen);
+			}
+		}
+	}
+
 public:  // helper
 	unsigned int getWidth() const
 	{
@@ -162,12 +255,13 @@ public:  // helper
 		return mHeight;
 	}
 
-	void validateIndex(int columnX, int rowY) const
-	{
-		if(columnX < 0 || columnX >= mWidth || rowY < 0 || rowY >= mHeight) {
-			throw std::out_of_range("Index out of bounds");
-		}
-	}
+void validateIndex(int columnX, int rowY) const
+{
+    if(columnX < 0 || columnX >= mWidth || rowY < 0 || rowY >= mHeight) {
+        std::string message = "Index out of bounds: (" + std::to_string(columnX) + ", " + std::to_string(rowY) + ")";
+        throw std::out_of_range(message);
+    }
+}
 
 	std::pair<int, int> getShift(Direction dir)
 	{

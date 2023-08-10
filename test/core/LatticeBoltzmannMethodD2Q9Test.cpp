@@ -20,6 +20,6 @@ TEST_F(LatticeBoltzmannMethodD2Q9Test, Diffusion) {
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         lbm.step();
-        lbm.mResultingDensityMatrix.print();
-        lbm.mResultingTemperatureMatrix.print();
+        // lbm.mResultingDensityMatrix.print();
+        // lbm.mResultingTemperatureMatrix.print();
 }

@@ -20,8 +20,8 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 	std::unique_ptr<CartesianMatrix<double>> initialSourceTemperatureMatrix,
 	std::vector<Entity>                      entities)
 {
-	mHeight   = height;
-	mWidth    = width;
+	mHeight   = height + 2;
+	mWidth    = width + 2;
 	mTop      = top;
 	mBottom   = bottom;
 	mLeft     = left;
@@ -30,7 +30,7 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 
 	// Initialize Core Data
 	if(initialDensityMatrix) {
-		assert(initialDensityMatrix->getHeight() == height + 2 && initialDensityMatrix->getWidth() == width + 2);
+		assert(initialDensityMatrix->getHeight() == mHeight && initialDensityMatrix->getWidth() == mWidth);
 #pragma omp parallel num_threads(MATRIX_SIZE)
 		{
 			int i       = omp_get_thread_num();
@@ -40,13 +40,12 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 #pragma omp parallel num_threads(MATRIX_SIZE)
 		{
 			int i       = omp_get_thread_num();
-			mDensity[i] = CartesianMatrix<double>(width + 2, height + 2);
+			mDensity[i] = CartesianMatrix<double>(mWidth, mHeight);
 		}
 	}
 
 	if(initialTemperatureMatrix) {
-		assert(initialTemperatureMatrix->getHeight() == height + 2 &&
-			   initialTemperatureMatrix->getWidth() == width + 2);
+		assert(initialTemperatureMatrix->getHeight() == mHeight && initialTemperatureMatrix->getWidth() == mWidth);
 #pragma omp parallel num_threads(MATRIX_SIZE)
 		{
 			int i           = omp_get_thread_num();
@@ -56,7 +55,7 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 #pragma omp parallel num_threads(MATRIX_SIZE)
 		{
 			int i           = omp_get_thread_num();
-			mTemperature[i] = CartesianMatrix<double>(width + 2, height + 2);
+			mTemperature[i] = CartesianMatrix<double>(mWidth, mHeight);
 		}
 	}
 
@@ -65,62 +64,78 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 	{
 #pragma omp section
 		{
-			mVelocity = CartesianMatrix<Velocity>(width + 2, height + 2);
+			mVelocityU = CartesianMatrix<double>(mWidth, mHeight);
 		}
 #pragma omp section
 		{
-			mResultingTemperatureMatrix = CartesianMatrix<double>(width + 2, height + 2);
+			mVelocityV = CartesianMatrix<double>(mWidth, mHeight);
 		}
 #pragma omp section
 		{
-			mResultingDensityMatrix = CartesianMatrix<double>(width + 2, height + 2);
+			Result1 = CartesianMatrix<double>(mWidth, mHeight);
+		}
+#pragma omp section
+		{
+			Result2 = CartesianMatrix<double>(mWidth, mHeight);
+		}
+#pragma omp section
+		{
+			mResultingTemperatureMatrix = CartesianMatrix<double>(mWidth, mHeight);
+		}
+#pragma omp section
+		{
+			mResultingDensityMatrix = CartesianMatrix<double>(mWidth, mHeight);
 		}
 #pragma omp section
 		{
 			if(initialKinematicViscosityMatrix) {
-				assert(initialKinematicViscosityMatrix->getHeight() == height + 2 &&
-					   initialKinematicViscosityMatrix->getWidth() == width + 2);
+				assert(initialKinematicViscosityMatrix->getHeight() == mHeight &&
+					   initialKinematicViscosityMatrix->getWidth() == mWidth);
 				mKinematicViscosityMatrix = *initialKinematicViscosityMatrix;
 			} else {
 				mKinematicViscosityMatrix =
-					CartesianMatrix<double>(width + 2, height + 2, 1.5e-5);  // Air at 20 degree celsius
+					CartesianMatrix<double>(mWidth, mHeight, 1.5e-5);  // Air at 20 degree celsius
 			}
 		}
 
 #pragma omp section
 		{
 			if(initialDiffusionCoefficientMatrix) {
-				assert(initialDiffusionCoefficientMatrix->getHeight() == height + 2 &&
-					   initialDiffusionCoefficientMatrix->getWidth() == width + 2);
+				assert(initialDiffusionCoefficientMatrix->getHeight() == mHeight &&
+					   initialDiffusionCoefficientMatrix->getWidth() == mWidth);
 				mDiffusionCoefficientMatrix = *initialDiffusionCoefficientMatrix;
 			} else {
 				mDiffusionCoefficientMatrix =
-					CartesianMatrix<double>(width + 2, height + 2, 2.0e-5);  // Air at 20 degree celsius
+					CartesianMatrix<double>(mWidth, mHeight, 2.0e-5);  // Air at 20 degree celsius
 			}
 		}
 #pragma omp section
 		{
 			if(initialSourceDensityMatrix) {
-				assert(initialSourceDensityMatrix->getHeight() == height + 2 &&
-					   initialSourceDensityMatrix->getWidth() == width + 2);
+				assert(initialSourceDensityMatrix->getHeight() == mHeight &&
+					   initialSourceDensityMatrix->getWidth() == mWidth);
 				mDensitySourceMatrix = *initialSourceDensityMatrix;
 			} else {
-				mDensitySourceMatrix = CartesianMatrix<double>(width + 2, height + 2);
+				mDensitySourceMatrix = CartesianMatrix<double>(mWidth, mHeight);
 			}
 		}
 #pragma omp section
 		{
 			if(initialSourceTemperatureMatrix) {
-				assert(initialSourceTemperatureMatrix->getHeight() == height + 2 &&
-					   initialSourceTemperatureMatrix->getWidth() == width + 2);
+				assert(initialSourceTemperatureMatrix->getHeight() == mHeight &&
+					   initialSourceTemperatureMatrix->getWidth() == mWidth);
 				mTemperatureSourceMatrix = *initialSourceTemperatureMatrix;
 			} else {
-				mTemperatureSourceMatrix = CartesianMatrix<double>(width + 2, height + 2);
+				mTemperatureSourceMatrix = CartesianMatrix<double>(mWidth, mHeight);
 			}
 		}
 #pragma omp section
 		{
-			mVelocitySourceMatrix = CartesianMatrix<Velocity>(width + 2, height + 2);
+			mVelocityUSourceMatrix = CartesianMatrix<double>(mWidth, mHeight);
+		}
+#pragma omp section
+		{
+			mVelocityVSourceMatrix = CartesianMatrix<double>(mWidth, mHeight);
 		}
 	}
 
@@ -138,12 +153,12 @@ void LatticeBoltzmannMethodD2Q9::step(bool buildResult, bool saveImage)
 	updateVelocityMatrix();
 	collision();
 	streaming();
-	if (buildResult) {
+	if(buildResult) {
 		buildResultDensityMatrix();
 		buildResultTemperatureMatrix();
 	}
 	if(saveImage) {
-		//TODO: verify heat map works
+		// TODO: verify heat map works
 		HeatMap::createHeatMap(mResultingDensityMatrix, "density");
 		HeatMap::createHeatMap(mResultingTemperatureMatrix, "temperature");
 	}
@@ -151,17 +166,19 @@ void LatticeBoltzmannMethodD2Q9::step(bool buildResult, bool saveImage)
 
 void LatticeBoltzmannMethodD2Q9::collision()
 {
-	// TODO
-	// CartesianMatrix<Velocity> mVelocity;
-	// CartesianMatrix<double>   mKinematicViscosityMatrix;
-	// CartesianMatrix<double>   mDiffusionCoefficientMatrix;
-	// // Source Matrix
-	// CartesianMatrix<double> mDensitySourceMatrix;
-	// CartesianMatrix<double> mTemperatureSourceMatrix;
+	buildResultDensityMatrix();
+	buildResultTemperatureMatrix();
+	for(int i = 0; i < MATRIX_SIZE; i++) {
+		Result1 = (mVelocityU * C[i].first + mVelocityV * C[i].second) * C_SPEED_SQUARED_INVERSE;
+		// Result2 = 1 + Result1 + 0.5 * Result1^2 - 0.5 * C_SPEED_SQUARED_INVERSE * (mVelocityU * mVelocityU + 2 *
+		// mVelocityU * mVelocityV + mVelocityV * mVelocityV);
 
-	// mOmega_m = 1.0 / (((D * kinematicViscosity) / ((DX * DX) / DT)) + 0.5);
-	// mOmega_s = 1.0 / (((D * diffusionCoefficient) / ((DX * DX) / DT)) + 0.5);
-
+		// mOmega_m = 1.0 / (((D * kinematicViscosity) / ((DX * DX) / DT)) + 0.5);
+		// mOmega_s = 1.0 / (((D * diffusionCoefficient) / ((DX * DX) / DT)) + 0.5);
+		// mDensity[i] = mDensity[i] * [1 - omega_m] + omega_m * (WEIGHT[i] * mResultingDensityMatrix * Result2;
+		// mTemperature[i] = mTemperature[i] * [1 - omega_s] + omega_s * (WEIGHT[i] * mResultingTemperatureMatrix * (1 +
+		// Result1));
+	}
 }
 
 void LatticeBoltzmannMethodD2Q9::streaming()
@@ -172,7 +189,8 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()
 {
 	// TODO: stub
-	mVelocity = mVelocitySourceMatrix;
+	mVelocityU = mVelocityUSourceMatrix;
+	mVelocityV = mVelocityVSourceMatrix;
 }
 
 void LatticeBoltzmannMethodD2Q9::buildResultDensityMatrix()
