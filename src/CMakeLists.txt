@@ -1,5 +1,6 @@
 # Find OpenMP
 find_package(OpenMP REQUIRED)
+find_package(OpenCL REQUIRED)
 
 # Find QT
 find_package(Qt6 REQUIRED COMPONENTS Core)
@@ -12,19 +13,24 @@ set(PROJECT_SOURCES
     LatticeMainWindow.cpp
     core/CartesianMatrix.hpp
     core/LatticeBoltzmannMethodD2Q9.h
-    core/LatticeBoltzmannMethodD2Q9.cpp)
+    core/LatticeBoltzmannMethodD2Q9.cpp
+    core/OpenCLMain.hpp)
 
 set(PROJECT_EXECUTABLE_NAME ${PROJECT_NAME})
 add_executable(${PROJECT_EXECUTABLE_NAME} ${PROJECT_SOURCES})
 install(TARGETS ${PROJECT_EXECUTABLE_NAME} DESTINATION "deploy")
 
-# Link QT lib
-target_link_libraries(${PROJECT_EXECUTABLE_NAME} PRIVATE Qt6::Core)
-target_link_libraries(${PROJECT_EXECUTABLE_NAME} PRIVATE Qt6::Gui)
-target_link_libraries(${PROJECT_EXECUTABLE_NAME} PRIVATE Qt6::Widgets)
-
 # Link OpenMP lib
-target_link_libraries(${PROJECT_EXECUTABLE_NAME} PUBLIC OpenMP::OpenMP_CXX)
+target_link_libraries(${PROJECT_EXECUTABLE_NAME} OpenMP::OpenMP_CXX)
+target_link_libraries(${PROJECT_EXECUTABLE_NAME} OpenCL::OpenCL)
+
+target_include_directories(${PROJECT_EXECUTABLE_NAME} PRIVATE ${OpenCL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_EXECUTABLE_NAME} ${OpenCL_LIBRARIES})
+
+# Link QT lib
+target_link_libraries(${PROJECT_EXECUTABLE_NAME} Qt6::Core)
+target_link_libraries(${PROJECT_EXECUTABLE_NAME} Qt6::Gui)
+target_link_libraries(${PROJECT_EXECUTABLE_NAME} Qt6::Widgets)
 
 # include(FetchContent)
 # FetchContent_Declare(

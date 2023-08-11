@@ -196,7 +196,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 }
 
 #pragma omp parallel num_threads(MATRIX_SIZE)
-{	
+{
 	// TODO: formula is wrong, also super slow.
 	int i    = omp_get_thread_num();
 	mResult1 = (mVelocityU * C[i].first + mVelocityV * C[i].second) * C_SPEED_SQUARED_INVERSE;

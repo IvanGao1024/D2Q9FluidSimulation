@@ -9,6 +9,8 @@
 #include <omp.h>
 #include <stdexcept>
 
+#include "OpenCLMain.hpp"
+
 /**
  * @brief The origin is at (0,0), located at the bottom left,
  * with x and y increasing as in a Cartesian coordinate system.
