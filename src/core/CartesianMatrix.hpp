@@ -45,54 +45,53 @@ public:
 	{
 		data.resize(mWidth * mHeight, initialValue);
 	}
-	
-CartesianMatrix(unsigned int nRow, unsigned int nColumn, const std::vector<std::vector<T>>& values) :
-    mWidth(nColumn),
-    mHeight(nRow)
-{
-    if(values.empty()) {
-        data.resize(mWidth * mHeight, T());
-    } else {
-        if(values.size() != nRow) {
-            throw std::out_of_range("Row count mismatch");
-        }
 
-        // Use a shared exception pointer to capture the first exception thrown.
-        std::exception_ptr excPtr = nullptr;
+	CartesianMatrix(unsigned int nRow, unsigned int nColumn, const std::vector<std::vector<T>>& values):
+		mWidth(nColumn),
+		mHeight(nRow)
+	{
+		if(values.empty()) {
+			data.resize(mWidth * mHeight, T());
+		} else {
+			if(values.size() != nRow) {
+				throw std::out_of_range("Row count mismatch");
+			}
 
-        #pragma omp parallel for
-        for(size_t i = 0; i < values.size(); i++) {
-            try {
-                if(values[i].size() != nColumn) {
-                    throw std::out_of_range("Column count mismatch for a specific row");
-                }
-            } catch(...) {
-                // Store exception and break from the loop
-                #pragma omp critical
-                {
-                    if(!excPtr) {
-                        excPtr = std::current_exception();
-                    }
-                }
-            }
-        }
+			// Use a shared exception pointer to capture the first exception thrown.
+			std::exception_ptr excPtr = nullptr;
 
-        // Rethrow the exception outside the parallel region
-        if(excPtr) {
-            std::rethrow_exception(excPtr);
-        }
+#pragma omp parallel for
+			for(size_t i = 0; i < values.size(); i++) {
+				try {
+					if(values[i].size() != nColumn) {
+						throw std::out_of_range("Column count mismatch for a specific row");
+					}
+				} catch(...) {
+// Store exception and break from the loop
+#pragma omp critical
+					{
+						if(!excPtr) {
+							excPtr = std::current_exception();
+						}
+					}
+				}
+			}
 
-        data.resize(mWidth * mHeight);
+			// Rethrow the exception outside the parallel region
+			if(excPtr) {
+				std::rethrow_exception(excPtr);
+			}
 
-        #pragma omp parallel for collapse(2)
-        for(size_t i = 0; i < mHeight; ++i) {
-            for(size_t j = 0; j < mWidth; ++j) {
-                data[i * mWidth + j] = values[i][j];
-            }
-        }
-    }
-}
+			data.resize(mWidth * mHeight);
 
+#pragma omp parallel for collapse(2)
+			for(size_t i = 0; i < mHeight; ++i) {
+				for(size_t j = 0; j < mWidth; ++j) {
+					data[i * mWidth + j] = values[i][j];
+				}
+			}
+		}
+	}
 
 public:
 	CartesianMatrix<T>& operator=(const CartesianMatrix<T>& rhs)
@@ -134,6 +133,58 @@ public:
 
 	// Scalar multiplication function
 	template<typename Scalar, typename = typename std::enable_if<std::is_arithmetic<Scalar>::value, Scalar>::type>
+	CartesianMatrix<T> operator+(const Scalar& value) const
+	{
+		CartesianMatrix<T> result(*this);
+#pragma omp parallel for
+		for(size_t i = 0; i < result.data.size(); ++i) {
+			result.data[i] += value;
+		}
+		return result;
+	}
+
+	CartesianMatrix<T> operator+(const CartesianMatrix<T>& rhs)
+	{
+		if(this->data.size() != rhs.data.size()) {
+			throw std::out_of_range("Dimention mismatch");
+		}
+		CartesianMatrix<T> result(*this);
+#pragma omp parallel for
+		for(size_t i = 0; i < result.data.size(); ++i) {
+			result.data[i] += rhs.data[i];
+		}
+
+		return result;
+	}
+
+	// Scalar multiplication function
+	template<typename Scalar, typename = typename std::enable_if<std::is_arithmetic<Scalar>::value, Scalar>::type>
+	CartesianMatrix<T> operator-(const Scalar& value) const
+	{
+		CartesianMatrix<T> result(*this);
+#pragma omp parallel for
+		for(size_t i = 0; i < result.data.size(); ++i) {
+			result.data[i] -= value;
+		}
+		return result;
+	}
+
+	CartesianMatrix<T> operator-(const CartesianMatrix<T>& rhs)
+	{
+		if(this->data.size() != rhs.data.size()) {
+			throw std::out_of_range("Dimention mismatch");
+		}
+		CartesianMatrix<T> result(*this);
+#pragma omp parallel for
+		for(size_t i = 0; i < result.data.size(); ++i) {
+			result.data[i] -= rhs.data[i];
+		}
+
+		return result;
+	}
+
+	// Scalar multiplication function
+	template<typename Scalar, typename = typename std::enable_if<std::is_arithmetic<Scalar>::value, Scalar>::type>
 	CartesianMatrix<T> operator*(const Scalar& value) const
 	{
 		CartesianMatrix<T> result(*this);
@@ -169,17 +220,35 @@ public:
 		return result;
 	}
 
-	CartesianMatrix<T> operator+(const CartesianMatrix<T>& rhs)
+	// Matrix divided by a scalar
+	template<typename Scalar, typename = typename std::enable_if<std::is_arithmetic<Scalar>::value, Scalar>::type>
+	CartesianMatrix<T> operator/(const Scalar& value) const
 	{
-		if(this->data.size() != rhs.data.size()) {
-			throw std::out_of_range("Dimention mismatch");
+		if(value == 0) {
+			throw std::runtime_error("Division by zero is undefined.");
 		}
+
 		CartesianMatrix<T> result(*this);
 #pragma omp parallel for
 		for(size_t i = 0; i < result.data.size(); ++i) {
-			result.data[i] += rhs.data[i];
+			result.data[i] /= value;
 		}
+		return result;
+	}
 
+	// Scalar divided by a matrix
+	template<typename Scalar, typename = typename std::enable_if<std::is_arithmetic<Scalar>::value, Scalar>::type>
+	friend CartesianMatrix<T> operator/(const Scalar& scalarValue, const CartesianMatrix<T>& matrix)
+	{
+		CartesianMatrix<T> result(matrix);
+
+#pragma omp parallel for
+		for(size_t i = 0; i < result.data.size(); ++i) {
+			if(result.data[i] == 0) {
+				throw std::runtime_error("Matrix contains zero elements, making division by matrix undefined.");
+			}
+			result.data[i] = scalarValue / result.data[i];
+		}
 		return result;
 	}
 

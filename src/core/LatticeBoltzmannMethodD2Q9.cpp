@@ -72,11 +72,19 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 		}
 #pragma omp section
 		{
-			Result1 = CartesianMatrix<double>(mWidth, mHeight);
+			mResult1 = CartesianMatrix<double>(mWidth, mHeight);
 		}
 #pragma omp section
 		{
-			Result2 = CartesianMatrix<double>(mWidth, mHeight);
+			mResult2 = CartesianMatrix<double>(mWidth, mHeight);
+		}
+#pragma omp section
+		{
+			mOmega_m = CartesianMatrix<double>(mWidth, mHeight);
+		}
+#pragma omp section
+		{
+			mOmega_s = CartesianMatrix<double>(mWidth, mHeight);
 		}
 #pragma omp section
 		{
@@ -93,6 +101,7 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 					   initialKinematicViscosityMatrix->getWidth() == mWidth);
 				mKinematicViscosityMatrix = *initialKinematicViscosityMatrix;
 			} else {
+				mKinematicViscosityMatrixRevised = true;
 				mKinematicViscosityMatrix =
 					CartesianMatrix<double>(mWidth, mHeight, 1.5e-5);  // Air at 20 degree celsius
 			}
@@ -105,6 +114,7 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(
 					   initialDiffusionCoefficientMatrix->getWidth() == mWidth);
 				mDiffusionCoefficientMatrix = *initialDiffusionCoefficientMatrix;
 			} else {
+				mDiffusionCoefficientMatrixRevised = true;
 				mDiffusionCoefficientMatrix =
 					CartesianMatrix<double>(mWidth, mHeight, 2.0e-5);  // Air at 20 degree celsius
 			}
@@ -168,17 +178,37 @@ void LatticeBoltzmannMethodD2Q9::collision()
 {
 	buildResultDensityMatrix();
 	buildResultTemperatureMatrix();
-	for(int i = 0; i < MATRIX_SIZE; i++) {
-		Result1 = (mVelocityU * C[i].first + mVelocityV * C[i].second) * C_SPEED_SQUARED_INVERSE;
-		// Result2 = 1 + Result1 + 0.5 * Result1^2 - 0.5 * C_SPEED_SQUARED_INVERSE * (mVelocityU * mVelocityU + 2 *
-		// mVelocityU * mVelocityV + mVelocityV * mVelocityV);
 
-		// mOmega_m = 1.0 / (((D * kinematicViscosity) / ((DX * DX) / DT)) + 0.5);
-		// mOmega_s = 1.0 / (((D * diffusionCoefficient) / ((DX * DX) / DT)) + 0.5);
-		// mDensity[i] = mDensity[i] * [1 - omega_m] + omega_m * (WEIGHT[i] * mResultingDensityMatrix * Result2;
-		// mTemperature[i] = mTemperature[i] * [1 - omega_s] + omega_s * (WEIGHT[i] * mResultingTemperatureMatrix * (1 +
-		// Result1));
+#pragma omp parallel sections
+	{
+#pragma omp section
+		{if(mKinematicViscosityMatrixRevised){mOmega_m =
+												  1.0 / (((mKinematicViscosityMatrix * D) / ((DX * DX) / DT)) + 0.5);
+}
+}
+
+#pragma omp section
+{
+	if(mDiffusionCoefficientMatrixRevised) {
+		mOmega_s = 1.0 / (((mDiffusionCoefficientMatrix * D) / ((DX * DX) / DT)) + 0.5);
 	}
+}
+}
+
+#pragma omp parallel num_threads(MATRIX_SIZE)
+{	
+	// TODO: formula is wrong, also super slow.
+	int i    = omp_get_thread_num();
+	mResult1 = (mVelocityU * C[i].first + mVelocityV * C[i].second) * C_SPEED_SQUARED_INVERSE;
+	mResult2 = mResult1 + mResult1 * mResult1 * 0.5 -
+			   (mVelocityU * mVelocityU + mVelocityU * mVelocityV * 2 + mVelocityV * mVelocityV) *
+				   (0.5 * C_SPEED_SQUARED_INVERSE) +
+			   1;
+
+	mDensity[i] = mDensity[i] * (mOmega_m - 1.0) + mOmega_m * (mResultingDensityMatrix * mResult2 * WEIGHT[i]);
+	mTemperature[i] =
+		mTemperature[i] * (mOmega_s - 1.0) + mOmega_s * (mResultingTemperatureMatrix * (mResult1 + 1) * WEIGHT[i]);
+}
 }
 
 void LatticeBoltzmannMethodD2Q9::streaming()

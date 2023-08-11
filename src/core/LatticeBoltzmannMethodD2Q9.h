@@ -94,8 +94,10 @@ private:
 	// Derived data
 	CartesianMatrix<double> mVelocityU;
 	CartesianMatrix<double> mVelocityV;
-	CartesianMatrix<double> Result1;
-	CartesianMatrix<double> Result2;
+	CartesianMatrix<double> mResult1;
+	CartesianMatrix<double> mResult2;
+	CartesianMatrix<double> mOmega_m;
+	CartesianMatrix<double> mOmega_s;
 
 public:  // Pre allocate memory for output
 	CartesianMatrix<double> mResultingDensityMatrix;
@@ -105,6 +107,8 @@ public:
 	// Blocks
 	std::vector<Entity> mEntities;
 	// Parameter
+	bool                    mKinematicViscosityMatrixRevised;
+	bool                    mDiffusionCoefficientMatrixRevised;
 	CartesianMatrix<double> mKinematicViscosityMatrix;
 	CartesianMatrix<double> mDiffusionCoefficientMatrix;
 	// Source Matrix

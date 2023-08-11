@@ -113,6 +113,9 @@ TEST_F(CartesianMatrixTest, OperatorElementWiseTest){
     m4.batchRevisionY(1, 5);
     EXPECT_EQ(m1, m3 + m4);
     EXPECT_EQ(m2, m3 * 2);
+    EXPECT_EQ(m3, m1 - m4);
+    EXPECT_THROW(m3 - m5, std::out_of_range);
+    EXPECT_EQ(m1 + 1, m3 + m4 + 1);
     EXPECT_THROW(m3 + m5, std::out_of_range);
 }
 

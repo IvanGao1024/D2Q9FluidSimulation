@@ -15,13 +15,13 @@ static void LatticeBoltzmannMethodD2Q9_Initiation(benchmark::State& state) {
 BENCHMARK(LatticeBoltzmannMethodD2Q9_Initiation);
 
 static void LatticeBoltzmannMethodD2Q9_Diffusion(benchmark::State& state) {
-    for (auto _ : state) {
-        LatticeBoltzmannMethodD2Q9 lbm (100, 100, 
+    LatticeBoltzmannMethodD2Q9 lbm (100, 100, 
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+    for (auto _ : state) {
         lbm.step();
     }
 }
