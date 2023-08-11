@@ -2,8 +2,9 @@
 #define LATTICE_BOLTZMANN_METHOD_D2Q9
 
 #include "CartesianMatrix.hpp"
+#include <array>
+#include <memory>
 
-#include <omp.h>  // For OpenMP
 class LatticeBoltzmannMethodD2Q9
 {
 	// D2Q9 Meta data

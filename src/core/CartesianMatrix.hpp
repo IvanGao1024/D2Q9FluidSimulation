@@ -2,12 +2,12 @@
 #define CARTESIAN_MATRIX
 
 #include <vector>
-#include <thread>
-#include <algorithm>
-#include <execution>
+#include <cassert>
 #include <iostream>
 #include <random>
 #include <type_traits>
+#include <omp.h>
+#include <stdexcept>
 
 /**
  * @brief The origin is at (0,0), located at the bottom left,
@@ -36,10 +36,8 @@ public:
 	enum Direction { UP, DOWN, LEFT, RIGHT };
 
 public:
-	CartesianMatrix()
+	CartesianMatrix(): mWidth(MATRIX_DEFAULT_WIDTH), mHeight(MATRIX_DEFAULT_HEIGHT)
 	{
-		mWidth  = MATRIX_DEFAULT_WIDTH;
-		mHeight = MATRIX_DEFAULT_HEIGHT;
 		data.resize(mWidth * mHeight, T());
 	}
 
@@ -47,33 +45,54 @@ public:
 	{
 		data.resize(mWidth * mHeight, initialValue);
 	}
+	
+CartesianMatrix(unsigned int nRow, unsigned int nColumn, const std::vector<std::vector<T>>& values) :
+    mWidth(nColumn),
+    mHeight(nRow)
+{
+    if(values.empty()) {
+        data.resize(mWidth * mHeight, T());
+    } else {
+        if(values.size() != nRow) {
+            throw std::out_of_range("Row count mismatch");
+        }
 
-	CartesianMatrix(unsigned int nRow, unsigned int nColumn, const std::vector<std::vector<T>>& values)
-    : mWidth(nColumn), mHeight(nRow)
-	{
-		if (values.empty()) {
-			data.resize(mWidth * mHeight, T());
-		} else {
-			data.resize(mWidth * mHeight);
-			
-			// Checking row count
-			assert(values.size() == nRow && "Row count mismatch");
+        // Use a shared exception pointer to capture the first exception thrown.
+        std::exception_ptr excPtr = nullptr;
 
-			#pragma omp parallel for
-			for (size_t i = 0; i < values.size(); i++)
-			{
-				// Checking column count for each row
-				assert(values[i].size() == nColumn && "Column count mismatch for a specific row");
-			}
+        #pragma omp parallel for
+        for(size_t i = 0; i < values.size(); i++) {
+            try {
+                if(values[i].size() != nColumn) {
+                    throw std::out_of_range("Column count mismatch for a specific row");
+                }
+            } catch(...) {
+                // Store exception and break from the loop
+                #pragma omp critical
+                {
+                    if(!excPtr) {
+                        excPtr = std::current_exception();
+                    }
+                }
+            }
+        }
 
-			#pragma omp parallel for collapse(2)
-			for(size_t i = 0; i < mHeight; ++i) {
-				for(size_t j = 0; j < mWidth; ++j) {
-					data[i * mWidth + j] = values[i][j];
-				}
-			}
-		}
-	}
+        // Rethrow the exception outside the parallel region
+        if(excPtr) {
+            std::rethrow_exception(excPtr);
+        }
+
+        data.resize(mWidth * mHeight);
+
+        #pragma omp parallel for collapse(2)
+        for(size_t i = 0; i < mHeight; ++i) {
+            for(size_t j = 0; j < mWidth; ++j) {
+                data[i * mWidth + j] = values[i][j];
+            }
+        }
+    }
+}
+
 
 public:
 	CartesianMatrix<T>& operator=(const CartesianMatrix<T>& rhs)
@@ -113,33 +132,19 @@ public:
 		return data[newY * mWidth + newX];
 	}
 
-	CartesianMatrix<T> operator*(const double& value)
+	// Scalar multiplication function
+	template<typename Scalar, typename = typename std::enable_if<std::is_arithmetic<Scalar>::value, Scalar>::type>
+	CartesianMatrix<T> operator*(const Scalar& value) const
 	{
 		CartesianMatrix<T> result(*this);
 #pragma omp parallel for
-		for(int i = 0; i < result.data.size(); ++i)
+		for(size_t i = 0; i < result.data.size(); ++i) {
 			result.data[i] *= value;
+		}
 		return result;
 	}
 
-	CartesianMatrix<T> operator*(const int& value)
-	{
-		CartesianMatrix<T> result(*this);
-#pragma omp parallel for
-		for(int i = 0; i < result.data.size(); ++i)
-			result.data[i] *= value;
-		return result;
-	}
-
-	CartesianMatrix<T> operator*(const unsigned int& value)
-	{
-		CartesianMatrix<T> result(*this);
-#pragma omp parallel for
-		for(int i = 0; i < result.data.size(); ++i)
-			result.data[i] *= value;
-		return result;
-	}
-
+	// Matrix multiplication function
 	CartesianMatrix<T> operator*(const CartesianMatrix<T>& other)
 	{
 		if(mWidth != other.mHeight) {
@@ -147,14 +152,15 @@ public:
 				"Dimension mismatch: The number of rows in the first matrix must equal the number of columns in the second.");
 		}
 
-		CartesianMatrix<T> result(mHeight, other.mWidth);  // Adjusting the size based on the usual matrix multiplication rules
+		CartesianMatrix<T> result(mHeight,
+								  other.mWidth);  // Adjusting the size based on the usual matrix multiplication rules
 
-		#pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
 		for(int y = 0; y < mHeight; ++y) {
 			for(int x = 0; x < other.mWidth; ++x) {
 				T sum = 0;
 				for(int k = 0; k < mWidth; ++k) {
-					sum += (*this).at({k, mHeight - 1 - y}) * other.at({x, other.mHeight - 1 - k}); 
+					sum += (*this).at({k, mHeight - 1 - y}) * other.at({x, other.mHeight - 1 - k});
 				}
 				result[{x, mHeight - 1 - y}] = sum;  // Using Cartesian coordinates
 			}
@@ -255,22 +261,23 @@ public:  // helper
 		return mHeight;
 	}
 
-void validateIndex(int columnX, int rowY) const
-{
-    if(columnX < 0 || columnX >= mWidth || rowY < 0 || rowY >= mHeight) {
-        std::string message = "Index out of bounds: (" + std::to_string(columnX) + ", " + std::to_string(rowY) + ")";
-        throw std::out_of_range(message);
-    }
-}
+	void validateIndex(int columnX, int rowY) const
+	{
+		if(columnX < 0 || columnX >= mWidth || rowY < 0 || rowY >= mHeight) {
+			std::string message =
+				"Index out of bounds: (" + std::to_string(columnX) + ", " + std::to_string(rowY) + ")";
+			throw std::out_of_range(message);
+		}
+	}
 
-	std::pair<int, int> getShift(Direction dir)
+	std::pair<int, int> getShift(Direction dir) const
 	{
 		switch(dir) {
 		case UP: return {0, 1};
 		case DOWN: return {0, -1};
 		case LEFT: return {1, 0};
 		case RIGHT: return {-1, 0};
-		default: return {0, 0};
+		default: throw std::invalid_argument("Unknown direction passed to getShift.");
 		}
 	}
 

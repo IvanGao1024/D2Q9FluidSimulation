@@ -39,6 +39,26 @@ TEST_F(CartesianMatrixTest, ConstructorInitiationTest) {
     CartesianMatrix<int> matrix4(3, 3, {{25, 30, 35}, {25, 30, 35}, {27, 30, 33}});
 }
 
+TEST_F(CartesianMatrixTest, MismatchedRowCount) {
+    std::vector<std::vector<int>> values = {
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9}
+    };
+
+    EXPECT_THROW(CartesianMatrix<int>(4, 3, values), std::out_of_range);
+}
+
+TEST_F(CartesianMatrixTest, MismatchedColumnCount) {
+    std::vector<std::vector<int>> values = {
+        {1, 2, 3},
+        {4, 5, 6, 7}, // This row has an extra column.
+        {7, 8, 9}
+    };
+
+    EXPECT_THROW(CartesianMatrix<int>(3, 3, values), std::out_of_range);
+}
+
 // ==/at/[]/exception
 TEST_F(CartesianMatrixTest, OperatorEqualsTest) {
     CartesianMatrix<int> m1(5,5);
@@ -210,8 +230,7 @@ TEST_F(CartesianMatrixTest, BaseShiftTest) {
     EXPECT_EQ(m4.at({0,0}), 1);
 
     // Cast an out-of-range integer to Direction to force test on the default case:
-    auto shiftDefault = m1.getShift(static_cast<CartesianMatrix<int>::Direction>(999));
-    EXPECT_EQ(shiftDefault, std::make_pair(0, 0));
+    EXPECT_THROW(m1.getShift(static_cast<CartesianMatrix<int>::Direction>(999)), std::invalid_argument);
 }
 
 
