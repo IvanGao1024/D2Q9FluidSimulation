@@ -4,36 +4,34 @@
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #include <CL/opencl.hpp>
 
+#include <cassert>
 #include <vector>
 #include <iostream>
-
-// inline const char* KERNEL_SRC = R"CLC(
-// __kernel void addOne(__global float* matrix, const unsigned int count) {
-//     int idx = get_global_id(0);
-//     if (idx < count) {
-//         matrix[idx] += 1.0f;
-//     }
-// }
-// )CLC";
+#include <memory>
 
 class OpenCLMain
 {
+private:
 	struct MachineProfile {
 		std::string mPlatformName;
 		std::string mDeviceName;
 	};
 
 private:
-	MachineProfile UserMachineProfile;
+	static inline MachineProfile UserMachineProfile;
 
-	cl::Platform         mPlatform;
-	cl::Device           mDevice;
-	cl::Context          mContext;
-	cl::CommandQueue     mQueue;
-	cl::Program::Sources mSources;
-	cl::Program          mProgram;
+	static inline cl::Platform         mPlatform;
+	static inline cl::Device           mDevice;
+	static inline cl::Context          mContext;
+	static inline cl::CommandQueue     mQueue;
+	static inline cl::Program::Sources mSources;
+	static inline cl::Program          mProgram;
 
-public:
+	static inline cl::NDRange local;
+	static inline cl::NDRange global;
+
+	static inline std::unique_ptr<cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>> pArrayAdditionKernel;
+private:
 	OpenCLMain()
 	{
 		// Handel Platforms
@@ -53,14 +51,14 @@ public:
 		}
 
 		// List found platforms
-		for(const cl::Platform& platform : all_platforms) {
-			std::cout << "[OpenCL] Platform found: " << platform.getInfo<CL_PLATFORM_NAME>() << "\n";
-		}
+		// for(const cl::Platform& platform : all_platforms) {
+		// 	std::cout << "[OpenCL] Platform found: " << platform.getInfo<CL_PLATFORM_NAME>() << "\n";
+		// }
 
 		// Select the default platform
 		mPlatform                        = all_platforms[0];
 		UserMachineProfile.mPlatformName = mPlatform.getInfo<CL_PLATFORM_NAME>();
-		std::cout << "[OpenCL] Platform selected: " << UserMachineProfile.mPlatformName << "\n";
+		// std::cout << "[OpenCL] Platform selected: " << UserMachineProfile.mPlatformName << "\n";
 
 		// Handel Devices
 		std::vector<cl::Device> all_devices;
@@ -73,37 +71,24 @@ public:
 		}
 
 		// List found devices
-		for(const cl::Device& device : all_devices) {
-			std::cout << "[OpenCL] Device found: " << device.getInfo<CL_DEVICE_NAME>() << "\n";
-		}
+		// for(const cl::Device& device : all_devices) {
+		// 	std::cout << "[OpenCL] Device found: " << device.getInfo<CL_DEVICE_NAME>() << "\n";
+		// }
 
 		// Select the default device
 		mDevice                        = all_devices[0];
 		UserMachineProfile.mDeviceName = mDevice.getInfo<CL_DEVICE_NAME>();
-		std::cout << "[OpenCL] Device selected:" << UserMachineProfile.mDeviceName << "\n";
+		// std::cout << "[OpenCL] Device selected:" << UserMachineProfile.mDeviceName << "\n";
 
 		// Handel context
 		mContext = cl::Context({mDevice});
 
-		// Example
-		const int SIZE = 10;
-		// h for host, d for device
-		int A_h[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-		int B_h[] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-		int C_h[SIZE];
-
-		cl::Buffer A_d(mContext, CL_MEM_READ_ONLY, sizeof(int) * SIZE);
-		cl::Buffer B_d(mContext, CL_MEM_READ_ONLY, sizeof(int) * SIZE);
-		cl::Buffer C_d(mContext, CL_MEM_WRITE_ONLY, sizeof(int) * SIZE);
-
 		// Handel queue
 		mQueue = cl::CommandQueue(mContext, mDevice);
 
-		// Example cont'd
-		mQueue.enqueueWriteBuffer(A_d, CL_TRUE, 0, sizeof(int) * SIZE, A_h);
-		mQueue.enqueueWriteBuffer(B_d, CL_TRUE, 0, sizeof(int) * SIZE, B_h);
+		// Handel kernel
 		std::string kernelCode = R"(
-            void kernel simple_add(global const int* A, global const int* B, global int* C){
+            void kernel arrayAdditionKernel(global const int* A, global const int* B, global int* C){
                 C[get_global_id(0)]=A[get_global_id(0)]+B[get_global_id(0)];
             }
         )";
@@ -115,41 +100,61 @@ public:
 			std::cout << " Error building: " << mProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(mDevice) << "\n";
 			throw std::runtime_error("Error building source code");
 		}
+		
 
-		cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer> simple_add(
-			cl::Kernel(mProgram, "simple_add"));
-		cl::NDRange global(SIZE);
-		simple_add(cl::EnqueueArgs(mQueue, global), A_d, B_d, C_d).wait();
-
-		// Retrieve data
-		mQueue.enqueueReadBuffer(C_d, CL_TRUE, 0, sizeof(int) * SIZE, C_h);
-
-		for(int val : C_h) {
-			std::cout << val;
-		}
-		std::cout << "\n";
+		pArrayAdditionKernel = std::make_unique<cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>>(
+        	cl::Kernel(mProgram, "arrayAdditionKernel")
+    	);
+		local = cl::NDRange(256);
 	}
 
-	void apply()
-	{
-		// // Execute the kernel
-		// size_t global_work_size = matrix.size();
-		// clEnqueueNDRangeKernel(queue, kernel, 1, nullptr, &global_work_size, nullptr, 0, nullptr, nullptr);
-		// clFinish(queue);
+public:
+	static OpenCLMain& instance() {
+        static OpenCLMain instance; // Guaranteed to be destroyed and instantiated on first use
+        return instance;
+	}
 
-		// // Read the result back
-		// clEnqueueReadBuffer(queue, buffer, CL_TRUE, 0, sizeof(float) * matrix.size(), matrix.data(), 0, nullptr,
-		// nullptr);
+	/**
+	 * @brief Add two array using OpenCL, require A_h and B_h has the same size.
+	 * 
+	 * @param A_h 
+	 * @param B_h 
+	 * @return std::vector<unsigned int> C_h stores the resulting array.
+	 */
+	static void arrayAddition(const std::vector<unsigned int> A_h, const std::vector<unsigned int> B_h, std::vector<unsigned int> C_h)
+	{	
+		assert(A_h.size() == B_h.size());
+		assert(B_h.size() == C_h.size());
+		assert(A_h.size() == C_h.size());
 
-		// // Print the matrix
-		// for (float val : matrix) {
-		//     std::cout << val << " ";
+		const unsigned int SIZE = A_h.size();
+		global = cl::NDRange(SIZE);
+
+		cl::Buffer A_d(mContext, CL_MEM_READ_ONLY, sizeof(unsigned int) * SIZE);
+		cl::Buffer B_d(mContext, CL_MEM_READ_ONLY, sizeof(unsigned int) * SIZE);
+		cl::Buffer C_d(mContext, CL_MEM_WRITE_ONLY, sizeof(unsigned int) * SIZE);
+
+		// Example cont'd
+		mQueue.enqueueWriteBuffer(A_d, CL_TRUE, 0, sizeof(unsigned int) * SIZE, A_h.data());
+		mQueue.enqueueWriteBuffer(B_d, CL_TRUE, 0, sizeof(unsigned int) * SIZE, B_h.data());
+		
+		(*pArrayAdditionKernel)(cl::EnqueueArgs(mQueue, global, local), A_d, B_d, C_d).wait();
+        
+		// arrayAdditionKernel(cl::EnqueueArgs(mQueue, global, local), A_d, B_d, C_d).wait();
+        
+		// Retrieve data
+		mQueue.enqueueReadBuffer(C_d, CL_TRUE, 0, sizeof(int) * SIZE, C_h.data());
+
+		// for (size_t i = 0; i < 20; i++)
+		// {
+		// 	std::cout << C_h[i];
 		// }
-		// std::cout << std::endl;
+		// std::cout << "\n";
 	}
 
 	~OpenCLMain()
-	{
+	{	
+
 		// // Cleanup OpenCL resources
 		// clReleaseMemObject(buffer);
 		// clReleaseKernel(kernel);
@@ -157,6 +162,12 @@ public:
 		// clReleaseCommandQueue(queue);
 		// clReleaseContext(context);
 	}
+	
+	// Delete copy/move constructors and assignment operators
+	OpenCLMain(OpenCLMain const&) = delete;
+	void operator=(OpenCLMain const&) = delete;
+	OpenCLMain(OpenCLMain&&) = delete;
+	void operator=(OpenCLMain&&) = delete;
 };
 
 #endif  // OPENCL_MAIN

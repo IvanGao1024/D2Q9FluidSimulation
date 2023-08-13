@@ -24,7 +24,7 @@ private:
 	static const unsigned int MATRIX_DEFAULT_HEIGHT = 1;
 	static const unsigned int MATRIX_DEFAULT_WIDTH  = 1;
 
-private:
+public:
 	std::pair<int, int> base{0, 0};
 	std::vector<T>      data;
 	int                 mWidth;
@@ -37,7 +37,7 @@ public:
 
 	enum Direction { UP, DOWN, LEFT, RIGHT };
 
-public:
+
 	CartesianMatrix(): mWidth(MATRIX_DEFAULT_WIDTH), mHeight(MATRIX_DEFAULT_HEIGHT)
 	{
 		data.resize(mWidth * mHeight, T());
