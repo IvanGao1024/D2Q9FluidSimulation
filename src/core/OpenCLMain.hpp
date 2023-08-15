@@ -223,88 +223,89 @@ public:
 		return output;
 	}
 
-    template<typename... Args>
-    static void evaluateArithmeticFormula(const std::string &expression, Args... args) {
-		if (sizeof...(args) > 26) {
-			throw std::invalid_argument("Error: Too many arguments passed!");
+	template <typename T>
+	static void evaluateArithmeticFormula(const std::string &expression, unsigned int arrayLength, std::vector<T*> values) {
+        std::cout << "Evaluate Arithmetic Formula:" << expression << "\n";
+
+		if (!std::is_arithmetic<T>::value) {
+			throw std::invalid_argument("Error: Given type is not numeric.");
 		}
 
-        // Count unique uppercase characters
+		// Check for number of variable mismatch by counting unique uppercase characters
         std::set<char> uniqueUppercaseChars;
         for (char ch : expression) {
             if (isupper(ch)) {
                 uniqueUppercaseChars.insert(ch);
             }
-        }
-
-		if (uniqueUppercaseChars.size() != sizeof...(args)) {
-			throw std::invalid_argument("Mismatch between number of variables in expression and provided arguments.");
 		}
-		
-		// Start evaluating the queue
+		std::cout << "Total of " << uniqueUppercaseChars.size() << " variables detected.\n";
+		std::cout << "Total of " << values.size() << " values given.\n";
+		if (uniqueUppercaseChars.size() != values.size())
+		{
+			throw std::invalid_argument("Error: Mismatch between the number of variable used in expression and the number of variable given.");
+		}
+
+		// Forming the post fix queue
         std::queue<std::string> mPostfixNotationQueue = enqueueArithmeticFormula(expression);
         
-        // Map to store variable values like A=1, B=2, etc.
-        std::map<char, double> values;
-        
-        char var = 'A';
-        auto assign = [&](double value) {
-            values[var++] = value;
-        };
-
-        // Assign passed values to variables
-        (assign(args), ...);
-
-        // Stack for evaluation
-        std::stack<double> evalStack;
-
-        while(!mPostfixNotationQueue.empty()) {
-			std::string token = mPostfixNotationQueue.front();
-			mPostfixNotationQueue.pop();
-
-			if(token == "+") {
-				double second = evalStack.top(); evalStack.pop();
-				double first = evalStack.top(); evalStack.pop();
-				std::cout << first << " + " << second << std::endl;
-				evalStack.push(0); // stub result
-			}
-			else if(token == "-") {
-				double second = evalStack.top(); evalStack.pop();
-				double first = evalStack.top(); evalStack.pop();
-				std::cout << first << " - " << second << std::endl;
-				evalStack.push(0); // stub result
-			}
-			else if(token == "*") {
-				double second = evalStack.top(); evalStack.pop();
-				double first = evalStack.top(); evalStack.pop();
-				std::cout << first << " * " << second << std::endl;
-				evalStack.push(0); // stub result
-			}
-			else if(token == "/") {
-				double second = evalStack.top(); evalStack.pop();
-				double first = evalStack.top(); evalStack.pop();
-				std::cout << first << " / " << second << std::endl;
-				evalStack.push(0); // stub result
-			}
-			else if(token.size() == 1 && isupper(token[0])) {
-				std::cout << "Variable " << token << " with value " << values[token[0]] << std::endl;
-				evalStack.push(values[token[0]]);
-			}
-			else if(std::regex_match(token, std::regex("[0-9]+"))) {  // Check if the token matches the pattern for positive integers
-				int value = std::stoi(token);  // Convert the token to an integer
-				std::cout << "Integer: " << value << std::endl;
-				evalStack.push(value);
-			}
-			else {
-				std::cout << "unknown token :" << token << std::endl;
-			}
+		// Initialize buffer memory
+		cl::Buffer buffers[values.size() + 1];
+		for (size_t i = 0; i < values.size(); i++)
+		{
+			buffers[i] = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(T) * arrayLength);
 		}
+		buffers[values.size()] = cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(T) * arrayLength);
+
+        // // Stack for evaluation
+        // std::stack<double> evalStack;
+
+        // while(!mPostfixNotationQueue.empty()) {
+		// 	std::string token = mPostfixNotationQueue.front();
+		// 	mPostfixNotationQueue.pop();
+
+		// 	if(token == "+") {
+		// 		double second = evalStack.top(); evalStack.pop();
+		// 		double first = evalStack.top(); evalStack.pop();
+		// 		std::cout << first << " + " << second << std::endl;
+		// 		evalStack.push(0); // stub result
+		// 	}
+		// 	else if(token == "-") {
+		// 		double second = evalStack.top(); evalStack.pop();
+		// 		double first = evalStack.top(); evalStack.pop();
+		// 		std::cout << first << " - " << second << std::endl;
+		// 		evalStack.push(0); // stub result
+		// 	}
+		// 	else if(token == "*") {
+		// 		double second = evalStack.top(); evalStack.pop();
+		// 		double first = evalStack.top(); evalStack.pop();
+		// 		std::cout << first << " * " << second << std::endl;
+		// 		evalStack.push(0); // stub result
+		// 	}
+		// 	else if(token == "/") {
+		// 		double second = evalStack.top(); evalStack.pop();
+		// 		double first = evalStack.top(); evalStack.pop();
+		// 		std::cout << first << " / " << second << std::endl;
+		// 		evalStack.push(0); // stub result
+		// 	}
+		// 	else if(token.size() == 1 && isupper(token[0])) {
+		// 		std::cout << "Variable " << token << " with value " << values[token[0]] << std::endl;
+		// 		evalStack.push(values[token[0]]);
+		// 	}
+		// 	else if(std::regex_match(token, std::regex("[0-9]+"))) {  // Check if the token matches the pattern for positive integers
+		// 		int value = std::stoi(token);  // Convert the token to an integer
+		// 		std::cout << "Integer: " << value << std::endl;
+		// 		evalStack.push(value);
+		// 	}
+		// 	else {
+		// 		std::cout << "unknown token :" << token << std::endl;
+		// 	}
+		// }
 
 
-        // Final result (for now just a stub)
-        if (!evalStack.empty()) {
-            std::cout << "Final result: " << evalStack.top() << std::endl;
-        }
+        // // Final result (for now just a stub)
+        // if (!evalStack.empty()) {
+        //     std::cout << "Final result: " << evalStack.top() << std::endl;
+        // }
     }
 
 	// static inline auto kernelAddingArray;
@@ -316,9 +317,8 @@ public:
 	// static inline cl::Buffer B_d;
 	// static inline cl::Buffer C_d;
 
-		// A_d = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(unsigned int) * 10000*10000);
 		// B_d = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(unsigned int) * 10000*10000);
-		// C_d = cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(unsigned int) * 10000*10000);
+		// 
 		// mK1 = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
         // 	cl::Kernel(mArithmeticProgram, "kernelAddingArray")
     	// );
@@ -352,17 +352,14 @@ public:
 		// 	std::cout << C_h[i];
 		// }
 		// std::cout << "\n";
-	
+		// clReleaseMemObject(buffer);
+		// clReleaseKernel(kernel);
+		// clReleaseCommandQueue(queue);
 
 	~OpenCLMain()
 	{	
-
-		// // Cleanup OpenCL resources
-		// clReleaseMemObject(buffer);
-		// clReleaseKernel(kernel);
-		// clReleaseProgram(program);
-		// clReleaseCommandQueue(queue);
-		// clReleaseContext(context);
+		// Cleanup OpenCL resources
+		mArithmeticProgram = nullptr;
 	}
 	
 	// Delete copy/move constructors and assignment operators

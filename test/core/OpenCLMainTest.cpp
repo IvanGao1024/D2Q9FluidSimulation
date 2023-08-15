@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <deque>
 #include "../../src/core/OpenCLMain.hpp"
+#include "../../src/core/CartesianMatrix.hpp"
 class OpenCLMainTest : public ::testing::Test {
 };
 
@@ -40,7 +41,13 @@ TEST_F(OpenCLMainTest, ShuntingYardTest_ExpressionWithParentheses) {
 }
 
 TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest) {
-    OpenCLMain::instance().evaluateArithmeticFormula("1/A*(B-3)/C-(2*D+E+1)", 3, 4, 6, 3, 1);
+    CartesianMatrix<unsigned int> m1(10000, 10000, 1);
+    CartesianMatrix<unsigned int> m2(10000, 10000, 2);
+    CartesianMatrix<unsigned int> m3(10000, 10000, 2);
+    CartesianMatrix<unsigned int> m4(10000, 10000, 2);
+    CartesianMatrix<unsigned int> m5(10000, 10000, 2);
+    OpenCLMain::instance().evaluateArithmeticFormula("1/A*(B-3)/C-(2*D+E+1)", 10000 * 10000, std::vector<unsigned int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
+
     // EXPECT_EQ(queueToString(result), "A B + C * ");
 }
 
