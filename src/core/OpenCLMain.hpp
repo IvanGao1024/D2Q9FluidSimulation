@@ -24,7 +24,7 @@ private:
 	struct MachineProfile {
 		std::string mPlatformName;
 		std::string mDeviceName;
-		size_t mOptimalWorkGroupSize;
+		size_t      mOptimalWorkGroupSize;
 	};
 
 private:
@@ -32,23 +32,18 @@ private:
 
 	static inline cl::Platform         mPlatform;
 	static inline cl::Device           mDevice;
-	static inline cl::NDRange 		   mLocal;
+	static inline cl::NDRange          mLocal;
 	static inline cl::Context          mContext;
 	static inline cl::Program::Sources mSources;
 	static inline cl::Program          mArithmeticProgram;
 
 private:
-	static inline const std::unordered_map<char, int> precedence = {
-		{'+', 1},
-		{'-', 1},
-		{'*', 2},
-		{'/', 2},
-		{'^', 3}
-	};
+	static inline const std::unordered_map<char, int> precedence = {{'+', 1}, {'-', 1}, {'*', 2}, {'/', 2}, {'^', 3}};
 
-    static bool isOperator(char c) {
-        return precedence.find(c) != precedence.end();
-    }
+	static bool isOperator(char c)
+	{
+		return precedence.find(c) != precedence.end();
+	}
 
 private:
 	OpenCLMain()
@@ -160,48 +155,51 @@ private:
 	}
 
 public:
-	static OpenCLMain& instance() {
-        static OpenCLMain instance; // Guaranteed to be destroyed and instantiated on first use
-        return instance;
+	static OpenCLMain& instance()
+	{
+		static OpenCLMain instance;  // Guaranteed to be destroyed and instantiated on first use
+		return instance;
 	}
 
 	// Convert an infix expression to postfix using the shunting yard algorithm
-	static std::queue<std::string> enqueueArithmeticFormula(const std::string &expression) {
+	static std::queue<std::string> enqueueArithmeticFormula(const std::string& expression)
+	{
 		std::queue<std::string> output;
-		std::stack<char> operators;
-		std::string token;
+		std::stack<char>        operators;
+		std::string             token;
 
-		for (char ch : expression) {
-			if (isspace(ch)) {
-				if (!token.empty()) {
+		for(char ch : expression) {
+			if(isspace(ch)) {
+				if(!token.empty()) {
 					output.push(token);
 					token.clear();
 				}
-			} else if (isOperator(ch)) {
-				if (!token.empty()) {
+			} else if(isOperator(ch)) {
+				if(!token.empty()) {
 					output.push(token);
 					token.clear();
 				}
 
-				while (!operators.empty() && isOperator(operators.top()) && precedence.at(ch) <= precedence.at(operators.top())) {
+				while(!operators.empty() && isOperator(operators.top()) &&
+					  precedence.at(ch) <= precedence.at(operators.top())) {
 					output.push(std::string(1, operators.top()));
 					operators.pop();
 				}
 				operators.push(ch);
-			} else if (ch == '(') {
+			} else if(ch == '(') {
 				operators.push(ch);
-			} else if (ch == ')') {
-				if (!token.empty()) {
+			} else if(ch == ')') {
+				if(!token.empty()) {
 					output.push(token);
 					token.clear();
 				}
 
-				while (!operators.empty() && operators.top() != '(') {
+				while(!operators.empty() && operators.top() != '(') {
 					output.push(std::string(1, operators.top()));
 					operators.pop();
 				}
 
-				if (!operators.empty()) {  // Pop the '(' from the stack
+				if(!operators.empty()) {  // Pop the '(' from the stack
 					operators.pop();
 				}
 			} else {  // Assume it's part of an operand (could be multi-digit numbers or multi-letter variable names)
@@ -210,12 +208,12 @@ public:
 		}
 
 		// If any remaining token is left, push it to the output
-		if (!token.empty()) {
+		if(!token.empty()) {
 			output.push(token);
 		}
 
 		// Push any remaining operators to the output
-		while (!operators.empty()) {
+		while(!operators.empty()) {
 			output.push(std::string(1, operators.top()));
 			operators.pop();
 		}
@@ -223,150 +221,205 @@ public:
 		return output;
 	}
 
-	template <typename T>
-	static void evaluateArithmeticFormula(const std::string &expression, unsigned int arrayLength, std::vector<T*> values) {
-        std::cout << "Evaluate Arithmetic Formula:" << expression << "\n";
+	/**
+	 * @brief 
+	 * @attention 'Z' is reserved for result, max 25 variable given.
+	 * @attention The use of 'A'-'Y' as variable name must be used in sequencial order.
+	 * @tparam T 
+	 * @param expression 
+	 * @param arrayLength 
+	 * @param values 
+	 */
+	template<typename T>
+	static void evaluateArithmeticFormula(const std::string& expression,
+										  unsigned int       arrayLength = 0,
+										  std::vector<T*>    values      = std::vector<T*>())
+	{
+		std::cout << "Evaluate Arithmetic Formula: " << expression << "\n";
 
-		if (!std::is_arithmetic<T>::value) {
+		if(!std::is_arithmetic<T>::value) {
 			throw std::invalid_argument("Error: Given type is not numeric.");
 		}
 
 		// Check for number of variable mismatch by counting unique uppercase characters
-        std::set<char> uniqueUppercaseChars;
-        for (char ch : expression) {
-            if (isupper(ch)) {
-                uniqueUppercaseChars.insert(ch);
-            }
+		std::set<char> uniqueUppercaseChars;
+		for(char ch : expression) {
+			if(isupper(ch)) {
+				uniqueUppercaseChars.insert(ch);
+			}
+			if (ch == 'Z')
+			{
+				throw std::invalid_argument("'Z' is reserved for result.");
+			}			
 		}
 		std::cout << "Total of " << uniqueUppercaseChars.size() << " variables detected.\n";
 		std::cout << "Total of " << values.size() << " values given.\n";
-		if (uniqueUppercaseChars.size() != values.size())
-		{
-			throw std::invalid_argument("Error: Mismatch between the number of variable used in expression and the number of variable given.");
+		if(uniqueUppercaseChars.size() != values.size()) {
+			throw std::invalid_argument(
+				"Error: Mismatch between the number of variable used in expression and the number of variable given.");
 		}
+
+		// Initialize parameter
+		cl::CommandQueue mQueue(mContext, mDevice);
+		cl::NDRange      mGlobal(arrayLength);
+		cl::Buffer       buffers[values.size() + 1];
+		if(values.size() != 0) {
+			// Allocate buffer memory
+			for(size_t i = 0; i < values.size(); i++) {
+				buffers[i] = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(T) * arrayLength);
+			}
+			buffers[values.size()] = cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(T) * arrayLength);
+			std::cout << "Total of " << values.size() + 1 << " buffer created.\n";
+			// Initialize buffer
+			for(size_t i = 0; i < values.size(); i++) {
+				mQueue.enqueueWriteBuffer(buffers[i], CL_TRUE, 0, sizeof(T) * arrayLength, values[i]);
+			}
+
+		} else {
+			std::cout << "Trivial Arithmetic Formula. No buffer or kernel initialized.\n";
+		}
+		// Initialize kernels
+		auto kernelAddingArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
+			cl::Kernel(mArithmeticProgram, "kernelAddingArray"));
+		auto kernelAddingConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
 
 		// Forming the post fix queue
-        std::queue<std::string> mPostfixNotationQueue = enqueueArithmeticFormula(expression);
-        
-		// Initialize buffer memory
-		cl::Buffer buffers[values.size() + 1];
-		for (size_t i = 0; i < values.size(); i++)
-		{
-			buffers[i] = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(T) * arrayLength);
+		std::queue<std::string> mPostfixNotationQueue = enqueueArithmeticFormula(expression);
+
+		// Stack for evaluation
+		std::stack<std::string> evalStack;
+
+		while(!mPostfixNotationQueue.empty()) {
+			std::string token = mPostfixNotationQueue.front();
+			mPostfixNotationQueue.pop();
+
+			if(std::regex_match(token, std::regex("[0-9]+"))) {
+				std::cout << "Load Integer: " << token << "\n";
+				evalStack.push(token);
+			} else if(token.size() == 1 && isupper(token[0])) {
+				std::cout << "Load Variable " << token << "\n";
+				evalStack.push(token);
+			} else if(token == "+") {
+				std::string second = evalStack.top();
+				evalStack.pop();
+				std::string first = evalStack.top();
+				evalStack.pop();
+
+				if(std::regex_match(first, std::regex("[0-9]+")) &&
+						  std::regex_match(second, std::regex("[0-9]+"))) {
+					evalStack.push(std::to_string(std::stoi(first) + std::stoi(second)));
+				} else if(std::isupper(first[0]) && std::regex_match(second, std::regex("[0-9]+"))) {
+					kernelAddingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										 buffers[first[0] - 'A'],
+										 buffers[values.size()],
+										 std::stoi(second))
+						.wait();
+					evalStack.push("Z");
+				} else if(std::regex_match(first, std::regex("[0-9]+")) && std::isupper(second[0])) {
+					kernelAddingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										 buffers[second[0] - 'A'],
+										 buffers[values.size()],
+										 std::stoi(first))
+						.wait();
+					evalStack.push("Z");
+				} else if(std::isupper(first[0]) && std::isupper(second[0])) {
+					kernelAddingArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										 buffers[first[0] - 'A'],
+										 buffers[second[0] - 'A'],
+										 buffers[values.size()])
+						.wait();
+					evalStack.push("Z");
+				} else {
+					std::string errorMsg = "Unknown token given: " + first + ", or " + second;
+					throw std::invalid_argument(errorMsg);
+				}
+			}
+			// else if(token == "-") {
+			// 	double second = evalStack.top(); evalStack.pop();
+			// 	double first = evalStack.top(); evalStack.pop();
+			// 	std::cout << first << " - " << second << std::endl;
+			// 	evalStack.push(0); // stub result
+			// }
+			// else if(token == "*") {
+			// 	double second = evalStack.top(); evalStack.pop();
+			// 	double first = evalStack.top(); evalStack.pop();
+			// 	std::cout << first << " * " << second << std::endl;
+			// 	evalStack.push(0); // stub result
+			// }
+			// else if(token == "/") {
+			// 	double second = evalStack.top(); evalStack.pop();
+			// 	double first = evalStack.top(); evalStack.pop();
+			// 	std::cout << first << " / " << second << std::endl;
+			// 	evalStack.push(0); // stub result
+			// }
+			// else if(token.size() == 1 && isupper(token[0])) {
+			// 	std::cout << "Variable " << token << " with value " << values[token[0]] << std::endl;
+			// 	evalStack.push(values[token[0]]);
+			// }
+			// else if() {  // Check if the token matches the pattern for positive integers
+			// 	int value = std::stoi(token);  // Convert the token to an integer
+			// 	std::cout << "Integer: " << value << std::endl;
+			// 	evalStack.push(value);
+			// }
+			else {
+				std::cout << "unknown token :" << token << std::endl;
+			}
 		}
-		buffers[values.size()] = cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(T) * arrayLength);
 
-        // // Stack for evaluation
-        // std::stack<double> evalStack;
+		// Final result
+		if (!evalStack.empty()) {
+			std::string result = evalStack.top();
+			if (result == "Z")
+			{	
+				std::vector<T> result;
+				result.resize(arrayLength);
 
-        // while(!mPostfixNotationQueue.empty()) {
-		// 	std::string token = mPostfixNotationQueue.front();
-		// 	mPostfixNotationQueue.pop();
+				mQueue.enqueueReadBuffer(buffers[values.size()], CL_TRUE, 0, sizeof(T) * arrayLength, result.data());
 
-		// 	if(token == "+") {
-		// 		double second = evalStack.top(); evalStack.pop();
-		// 		double first = evalStack.top(); evalStack.pop();
-		// 		std::cout << first << " + " << second << std::endl;
-		// 		evalStack.push(0); // stub result
-		// 	}
-		// 	else if(token == "-") {
-		// 		double second = evalStack.top(); evalStack.pop();
-		// 		double first = evalStack.top(); evalStack.pop();
-		// 		std::cout << first << " - " << second << std::endl;
-		// 		evalStack.push(0); // stub result
-		// 	}
-		// 	else if(token == "*") {
-		// 		double second = evalStack.top(); evalStack.pop();
-		// 		double first = evalStack.top(); evalStack.pop();
-		// 		std::cout << first << " * " << second << std::endl;
-		// 		evalStack.push(0); // stub result
-		// 	}
-		// 	else if(token == "/") {
-		// 		double second = evalStack.top(); evalStack.pop();
-		// 		double first = evalStack.top(); evalStack.pop();
-		// 		std::cout << first << " / " << second << std::endl;
-		// 		evalStack.push(0); // stub result
-		// 	}
-		// 	else if(token.size() == 1 && isupper(token[0])) {
-		// 		std::cout << "Variable " << token << " with value " << values[token[0]] << std::endl;
-		// 		evalStack.push(values[token[0]]);
-		// 	}
-		// 	else if(std::regex_match(token, std::regex("[0-9]+"))) {  // Check if the token matches the pattern for positive integers
-		// 		int value = std::stoi(token);  // Convert the token to an integer
-		// 		std::cout << "Integer: " << value << std::endl;
-		// 		evalStack.push(value);
-		// 	}
-		// 	else {
-		// 		std::cout << "unknown token :" << token << std::endl;
-		// 	}
-		// }
+				std::cout << "result:\n";
+				for (size_t i = 0; i < result.size(); i++)
+				{
+		    		std::cout << result.at(i) << "\n";
+				}
+				std::cout << std::endl;
+			} else {
+		    	std::cout << "Final result: " << result << std::endl;
+			}
+		} else {
+			throw std::runtime_error("Unknown error, result stack empty.");
+		}
+		std::cout << "Evaluate Arithmetic Formula: " << expression << " Finished!"
+				  << "\n";
+	}
 
-
-        // // Final result (for now just a stub)
-        // if (!evalStack.empty()) {
-        //     std::cout << "Final result: " << evalStack.top() << std::endl;
-        // }
-    }
-
-	// static inline auto kernelAddingArray;
-
-	// static inline cl::CommandQueue     mQueue;
-	// static inline cl::NDRange global;
-
+					// Retrieve data
+					// mQueue.enqueueReadBuffer(C_d, CL_TRUE, 0, sizeof(int) * SIZE, C_h);
 	// static inline cl::Buffer A_d;
 	// static inline cl::Buffer B_d;
 	// static inline cl::Buffer C_d;
 
-		// B_d = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(unsigned int) * 10000*10000);
-		// 
-		// mK1 = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
-        // 	cl::Kernel(mArithmeticProgram, "kernelAddingArray")
-    	// );
-
-		// mK2 = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
-        // 	cl::Kernel(mArithmeticProgram, "kernelAddingConstant")
-    	// );
-
-		// Handel queue
-		// mQueue = cl::CommandQueue(mContext, mDevice);
-		// // assert(A_h.size() == B_h.size());
-		// // assert(B_h.size() == C_h.size());
-		// // assert(A_h.size() == C_h.size());
-
-		// const unsigned int SIZE = size;
-		// global = cl::NDRange(SIZE);
-
-		// // Example cont'd
-		// mQueue.enqueueWriteBuffer(A_d, CL_TRUE, 0, sizeof(unsigned int) * SIZE, A_h);
-		// mQueue.enqueueWriteBuffer(B_d, CL_TRUE, 0, sizeof(unsigned int) * SIZE, B_h);
-		
-		// (*pArrayAdditionKernel)(cl::EnqueueArgs(mQueue, global, local), A_d, B_d, C_d).wait();
-        
-		// arrayAdditionKernel(cl::EnqueueArgs(mQueue, global, local), A_d, B_d, C_d).wait();
-        
-		// Retrieve data
-		// mQueue.enqueueReadBuffer(C_d, CL_TRUE, 0, sizeof(int) * SIZE, C_h);
-
-		// for (size_t i = 0; i < 20; i++)
-		// {
-		// 	std::cout << C_h[i];
-		// }
-		// std::cout << "\n";
-		// clReleaseMemObject(buffer);
-		// clReleaseKernel(kernel);
-		// clReleaseCommandQueue(queue);
+	// // Example cont'd
+	// for (size_t i = 0; i < 20; i++)
+	// {
+	// 	std::cout << C_h[i];
+	// }
+	// std::cout << "\n";
+	// clReleaseMemObject(buffer);
+	// clReleaseKernel(kernel);
+	// clReleaseCommandQueue(queue);
 
 	~OpenCLMain()
-	{	
+	{
 		// Cleanup OpenCL resources
 		mArithmeticProgram = nullptr;
 	}
-	
+
 	// Delete copy/move constructors and assignment operators
-	OpenCLMain(OpenCLMain const&) = delete;
+	OpenCLMain(OpenCLMain const&)     = delete;
 	void operator=(OpenCLMain const&) = delete;
-	OpenCLMain(OpenCLMain&&) = delete;
-	void operator=(OpenCLMain&&) = delete;
+	OpenCLMain(OpenCLMain&&)          = delete;
+	void operator=(OpenCLMain&&)      = delete;
 };
 
 #endif  // OPENCL_MAIN

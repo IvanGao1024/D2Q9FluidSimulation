@@ -40,14 +40,27 @@ TEST_F(OpenCLMainTest, ShuntingYardTest_ExpressionWithParentheses) {
     EXPECT_EQ(queueToString(result), "A B + C * ");
 }
 
-TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest) {
-    CartesianMatrix<unsigned int> m1(10000, 10000, 1);
-    CartesianMatrix<unsigned int> m2(10000, 10000, 2);
-    CartesianMatrix<unsigned int> m3(10000, 10000, 2);
-    CartesianMatrix<unsigned int> m4(10000, 10000, 2);
-    CartesianMatrix<unsigned int> m5(10000, 10000, 2);
-    OpenCLMain::instance().evaluateArithmeticFormula("1/A*(B-3)/C-(2*D+E+1)", 10000 * 10000, std::vector<unsigned int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
-
-    // EXPECT_EQ(queueToString(result), "A B + C * ");
+TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_AdditionBaseCase) {
+    CartesianMatrix<unsigned int> m1(5, 5, 1);
+    CartesianMatrix<unsigned int> m2(5, 5, 2);
+    CartesianMatrix<unsigned int> m3(5, 5, 3);
+    CartesianMatrix<unsigned int> m4(5, 5, 4);
+    CartesianMatrix<unsigned int> m5(5, 5, 5);
+    OpenCLMain::instance().evaluateArithmeticFormula<unsigned int>("10 + 10");
+    OpenCLMain::instance().evaluateArithmeticFormula("A + 10", 25, std::vector<unsigned int*>{m1.data.data()});
+    OpenCLMain::instance().evaluateArithmeticFormula("10 + A", 25, std::vector<unsigned int*>{m2.data.data()});
+    OpenCLMain::instance().evaluateArithmeticFormula("A + B", 25, std::vector<unsigned int*>{m1.data.data(), m2.data.data()});
+    // TODO sequencial test and try to output result 
 }
+
+// TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_AdditionBaseCase) {
+//     CartesianMatrix<unsigned int> m1(10000, 10000, 1);
+//     CartesianMatrix<unsigned int> m2(10000, 10000, 2);
+//     CartesianMatrix<unsigned int> m3(10000, 10000, 2);
+//     CartesianMatrix<unsigned int> m4(10000, 10000, 2);
+//     CartesianMatrix<unsigned int> m5(10000, 10000, 2);
+//     OpenCLMain::instance().evaluateArithmeticFormula("1/A*(B-3)/C-(2*D+E+1)", 10000 * 10000, std::vector<unsigned int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
+
+//     // EXPECT_EQ(queueToString(result), "A B + C * ");
+// }
 

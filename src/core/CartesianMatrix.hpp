@@ -37,7 +37,6 @@ public:
 
 	enum Direction { UP, DOWN, LEFT, RIGHT };
 
-
 	CartesianMatrix(): mWidth(MATRIX_DEFAULT_WIDTH), mHeight(MATRIX_DEFAULT_HEIGHT)
 	{
 		data.resize(mWidth * mHeight, T());
