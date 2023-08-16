@@ -61,17 +61,29 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_AdditionBaseCase) {
     EXPECT_EQ(result[0], 12);
     result = OpenCLMain::instance().evaluateArithmeticFormula("1 + A + B + 13 + C + D + 2032 + E", 25, std::vector<unsigned int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
     EXPECT_EQ(result[0], 2061);
-
 }
 
-// TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_AdditionBaseCase) {
-//     CartesianMatrix<unsigned int> m1(10000, 10000, 1);
-//     CartesianMatrix<unsigned int> m2(10000, 10000, 2);
-//     CartesianMatrix<unsigned int> m3(10000, 10000, 2);
-//     CartesianMatrix<unsigned int> m4(10000, 10000, 2);
-//     CartesianMatrix<unsigned int> m5(10000, 10000, 2);
-//     OpenCLMain::instance().evaluateArithmeticFormula("1/A*(B-3)/C-(2*D+E+1)", 10000 * 10000, std::vector<unsigned int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
-
-//     // EXPECT_EQ(queueToString(result), "A B + C * ");
-// }
-
+TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_SubtractionBaseCase) {
+    CartesianMatrix<int> m1(5, 5, 1);
+    CartesianMatrix<int> m2(5, 5, 2);
+    CartesianMatrix<int> m3(5, 5, 3);
+    CartesianMatrix<int> m4(5, 5, 4);
+    CartesianMatrix<int> m5(5, 5, 5);
+    std::vector<int> result;
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("5 - 1");
+    EXPECT_EQ(result[0], 4);
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("10 - 11");
+    EXPECT_EQ(result[0], -1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A - 10", 25, std::vector<int*>{m1.data.data()});
+    EXPECT_EQ(result[0], -9);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A - B", 25, std::vector<int*>{m1.data.data(), m2.data.data()});
+    EXPECT_EQ(result[0], -1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("1 - 1 - 1 - 1 - 1");
+    EXPECT_EQ(result[0], -3);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A - 10 - A", 25, std::vector<int*>{m1.data.data()});
+    EXPECT_EQ(result[0], -10);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("10244 - A", 25, std::vector<int*>{m1.data.data()});
+    EXPECT_EQ(result[0], 10243);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("10244 - A - B - 13 - C - D - 2032 - E", 25, std::vector<int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
+    EXPECT_EQ(result[0], 8184);
+}

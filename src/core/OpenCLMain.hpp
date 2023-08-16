@@ -104,41 +104,47 @@ private:
 
 		// Initiate Arithmetic Kernel
 		std::string kernelCode = R"(
-			void kernel kernelAddingArray(global const unsigned int* A, global const unsigned int* B, global unsigned int* C) {
+			void kernel kernelAddingArray(global const int* A, global const int* B, global int* C) {
 				C[get_global_id(0)] = A[get_global_id(0)] + B[get_global_id(0)];
 			}
+			void kernel kernelAddingConstant(global const int* A, global int* B, const int C) {
+				B[get_global_id(0)] = A[get_global_id(0)] + C;
+			}
+
 			void kernel kernelSubtractingArray(global const unsigned int* A, global const unsigned int* B, global unsigned int* C) {
 				C[get_global_id(0)] = A[get_global_id(0)] - B[get_global_id(0)];
 			}
-			void kernel kernelMultiplicatingArray(global const unsigned int* A, global const unsigned int* B, global unsigned int* C) {
+			void kernel kernelSubtractingConstant(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
+				B[get_global_id(0)] = A[get_global_id(0)] - C;
+			}
+			void kernel kernelConstantSubtracting(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
+				B[get_global_id(0)] = C - A[get_global_id(0)];
+			}
+
+			void kernel kernelMultiplicatingArray(global const int* A, global const int* B, global int* C) {
 				C[get_global_id(0)] = A[get_global_id(0)] * B[get_global_id(0)];
 			}
-			void kernel kernelDividingByArray(global const unsigned int* A, global const unsigned int* B, global unsigned int* C) {
-				unsigned int bValue = B[get_global_id(0)];
+			void kernel kernelMultiplicatingConstant(global const int* A, global int* B, const int C) {
+				B[get_global_id(0)] = A[get_global_id(0)] * C;
+			}
+
+			void kernel kernelDividingByArray(global const int* A, global const int* B, global int* C) {
+				int bValue = B[get_global_id(0)];
 				if (bValue != 0) {  // Ensure don't divide by zero
 					C[get_global_id(0)] = A[get_global_id(0)] / bValue;
 				} else {
 					C[get_global_id(0)] = 0;
 				}
 			}
-			void kernel kernelAddingConstant(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
-				B[get_global_id(0)] = A[get_global_id(0)] + C;
-			}
-			void kernel kernelSubtractingConstant(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
-				B[get_global_id(0)] = A[get_global_id(0)] - C;
-			}
-			void kernel kernelMultiplicatingConstant(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
-				B[get_global_id(0)] = A[get_global_id(0)] * C;
-			}
-			void kernel kernelDividedByConstant(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
+			void kernel kernelDividedByConstant(global const int* A, global int* B, const int C) {
 				if (C != 0) {  // Ensure don't divide by zero
 					B[get_global_id(0)] = A[get_global_id(0)] / C;
 				} else {
 					B[get_global_id(0)] = 0;
 				}
 			}
-			void kernel kernelOneOverArray(global const unsigned int* A, global unsigned int* B) {
-				unsigned int value = A[get_global_id(0)];
+			void kernel kernelOneOverArray(global const int* A, global int* B) {
+				int value = A[get_global_id(0)];
 				if (value != 0) {  // Ensure don't divide by zero
 					B[get_global_id(0)] = 1 / value;
 				} else {
@@ -218,22 +224,29 @@ public:
 			operators.pop();
 		}
 
+		std::queue<std::string> copy = output;
+		std::string             result;
+		while(!copy.empty()) {
+			result += copy.front() + " ";
+			copy.pop();
+		}
+		std::cout << "Postfix queue " << result << "\n";
 		return output;
 	}
 
 	/**
-	 * @brief 
+	 * @brief
 	 * @attention a character after last character used will be used for result, so max 25 variable can be used.
 	 * @attention The use of 'A'-'Y' as variable name must be used in sequencial order.
-	 * @tparam T 
-	 * @param expression 
-	 * @param arrayLength 
-	 * @param values 
+	 * @tparam T
+	 * @param expression
+	 * @param arrayLength
+	 * @param values
 	 */
 	template<typename T>
 	static std::vector<T> evaluateArithmeticFormula(const std::string& expression,
-										  unsigned int      arrayLength = 0,
-										  std::vector<T*>   arrayValues      = std::vector<T*>())
+													unsigned int       arrayLength = 0,
+													std::vector<T*>    arrayValues = std::vector<T*>())
 	{
 		std::cout << "Evaluate Arithmetic Formula: " << expression << "\n";
 
@@ -247,10 +260,9 @@ public:
 			if(isupper(ch)) {
 				uniqueUppercaseChars.insert(ch);
 			}
-			if (ch == 'Z')
-			{
+			if(ch == 'Z') {
 				throw std::invalid_argument("'Z' is reserved for result.");
-			}			
+			}
 		}
 		std::cout << "Total of " << uniqueUppercaseChars.size() << " variables detected.\n";
 		std::cout << "Total of " << arrayValues.size() << " arrayValues given.\n";
@@ -284,6 +296,12 @@ public:
 			cl::Kernel(mArithmeticProgram, "kernelAddingArray"));
 		auto kernelAddingConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
 			cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
+		auto kernelSubtractingArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
+			cl::Kernel(mArithmeticProgram, "kernelSubtractingArray"));
+		auto kernelSubtractingConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelSubtractingConstant"));
+		auto kernelConstantSubtracting = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelConstantSubtracting"));
 
 		// Forming the post fix queue
 		std::queue<std::string> mPostfixNotationQueue = enqueueArithmeticFormula(expression);
@@ -291,33 +309,34 @@ public:
 		// Stack for evaluation
 		std::stack<std::string> evalStack;
 
+		// Loop over stack and evaluate by data type
 		while(!mPostfixNotationQueue.empty()) {
 			std::string token = mPostfixNotationQueue.front();
 			mPostfixNotationQueue.pop();
 
-			if(std::regex_match(token, std::regex("[0-9]+"))) {
-				// std::cout << "Load Integer: " << token << "\n";
+			if(std::regex_match(token, std::regex("-?[0-9]+"))) {
+				std::cout << "Load Integer: " << token << "\n";
 				evalStack.push(token);
 			} else if(token.size() == 1 && isupper(token[0])) {
-				// std::cout << "Load Variable " << token << "\n";
+				std::cout << "Load Variable " << token << "\n";
 				evalStack.push(token);
 			} else if(token == "+") {
 				std::string second = evalStack.top();
 				evalStack.pop();
 				std::string first = evalStack.top();
 				evalStack.pop();
-				
-				if(std::regex_match(first, std::regex("[0-9]+")) &&
-						  std::regex_match(second, std::regex("[0-9]+"))) {
+
+				if(std::regex_match(first, std::regex("-?[0-9]+")) &&
+				   std::regex_match(second, std::regex("-?[0-9]+"))) {
 					evalStack.push(std::to_string(std::stoi(first) + std::stoi(second)));
-				} else if(std::isupper(first[0]) && std::regex_match(second, std::regex("[0-9]+"))) {
+				} else if(std::isupper(first[0]) && std::regex_match(second, std::regex("-?[0-9]+"))) {
 					kernelAddingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
 										 buffers[first[0] - 'A'],
 										 buffers[arrayValues.size()],
 										 std::stoi(second))
 						.wait();
 					evalStack.push(resultChar);
-				} else if(std::regex_match(first, std::regex("[0-9]+")) && std::isupper(second[0])) {
+				} else if(std::regex_match(first, std::regex("-?[0-9]+")) && std::isupper(second[0])) {
 					kernelAddingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
 										 buffers[second[0] - 'A'],
 										 buffers[arrayValues.size()],
@@ -326,9 +345,44 @@ public:
 					evalStack.push(resultChar);
 				} else if(std::isupper(first[0]) && std::isupper(second[0])) {
 					kernelAddingArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-										 buffers[first[0] - 'A'],
-										 buffers[second[0] - 'A'],
-										 buffers[arrayValues.size()])
+									  buffers[first[0] - 'A'],
+									  buffers[second[0] - 'A'],
+									  buffers[arrayValues.size()])
+						.wait();
+					evalStack.push(resultChar);
+				} else {
+					std::string errorMsg = "Unknown token given: " + first + ", or " + second;
+					throw std::invalid_argument(errorMsg);
+				}
+			} else if(token == "-") {
+				std::string second = evalStack.top();
+				evalStack.pop();
+				std::string first = evalStack.top();
+				evalStack.pop();
+
+				if(std::regex_match(first, std::regex("-?[0-9]+")) &&
+				   std::regex_match(second, std::regex("-?[0-9]+"))) {
+					evalStack.push(std::to_string(std::stoi(first) - std::stoi(second)));
+				} else if(std::isupper(first[0]) && std::regex_match(second, std::regex("-?[0-9]+"))) {
+					kernelSubtractingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											  buffers[first[0] - 'A'],
+											  buffers[arrayValues.size()],
+											  std::stoi(second))
+						.wait();
+					evalStack.push(resultChar);
+				} else if(std::regex_match(first, std::regex("-?[0-9]+")) && std::isupper(second[0])) {
+					kernelConstantSubtracting(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											  buffers[second[0] - 'A'],
+											  buffers[arrayValues.size()],
+											  std::stoi(first))
+						.wait();
+					evalStack.push(resultChar);
+					std::cout << "reach" << std::endl;
+				} else if(std::isupper(first[0]) && std::isupper(second[0])) {
+					kernelSubtractingArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										   buffers[first[0] - 'A'],
+										   buffers[second[0] - 'A'],
+										   buffers[arrayValues.size()])
 						.wait();
 					evalStack.push(resultChar);
 				} else {
@@ -336,12 +390,6 @@ public:
 					throw std::invalid_argument(errorMsg);
 				}
 			}
-			// else if(token == "-") {
-			// 	double second = evalStack.top(); evalStack.pop();
-			// 	double first = evalStack.top(); evalStack.pop();
-			// 	std::cout << first << " - " << second << std::endl;
-			// 	evalStack.push(0); // stub result
-			// }
 			// else if(token == "*") {
 			// 	double second = evalStack.top(); evalStack.pop();
 			// 	double first = evalStack.top(); evalStack.pop();
@@ -370,25 +418,28 @@ public:
 
 		// Final result
 		std::vector<T> resultVector(1);
-		if (!evalStack.empty()) {
+		if(!evalStack.empty()) {
 			std::string result = evalStack.top();
-			if (result == resultChar)
-			{
+			if(result == resultChar) {
 				resultVector.resize(arrayLength);
-				mQueue.enqueueReadBuffer(buffers[arrayValues.size()], CL_TRUE, 0, sizeof(T) * arrayLength, resultVector.data());
+				mQueue.enqueueReadBuffer(buffers[arrayValues.size()],
+										 CL_TRUE,
+										 0,
+										 sizeof(T) * arrayLength,
+										 resultVector.data());
 			} else {
 				resultVector[0] = static_cast<T>(std::stoi(result));
 			}
-		std::cout << "Evaluate Arithmetic Formula: " << expression << " Finished!"
-				  << "\n";
+			std::cout << "Evaluate Arithmetic Formula: " << expression << " Finished with result " << resultVector[0]
+					  << "\n";
 			return resultVector;
 		} else {
 			throw std::runtime_error("Unknown error, result stack empty or unknown reference to variable.");
 		}
 	}
 
-					// Retrieve data
-					// mQueue.enqueueReadBuffer(C_d, CL_TRUE, 0, sizeof(int) * SIZE, C_h);
+	// Retrieve data
+	// mQueue.enqueueReadBuffer(C_d, CL_TRUE, 0, sizeof(int) * SIZE, C_h);
 	// static inline cl::Buffer A_d;
 	// static inline cl::Buffer B_d;
 	// static inline cl::Buffer C_d;
