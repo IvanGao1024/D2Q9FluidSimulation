@@ -46,11 +46,22 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_AdditionBaseCase) {
     CartesianMatrix<unsigned int> m3(5, 5, 3);
     CartesianMatrix<unsigned int> m4(5, 5, 4);
     CartesianMatrix<unsigned int> m5(5, 5, 5);
-    OpenCLMain::instance().evaluateArithmeticFormula<unsigned int>("10 + 10");
-    OpenCLMain::instance().evaluateArithmeticFormula("A + 10", 25, std::vector<unsigned int*>{m1.data.data()});
-    OpenCLMain::instance().evaluateArithmeticFormula("10 + A", 25, std::vector<unsigned int*>{m2.data.data()});
-    OpenCLMain::instance().evaluateArithmeticFormula("A + B", 25, std::vector<unsigned int*>{m1.data.data(), m2.data.data()});
-    // TODO sequencial test and try to output result 
+    std::vector<unsigned int> result;
+    result = OpenCLMain::instance().evaluateArithmeticFormula<unsigned int>("10 + 10");
+    EXPECT_EQ(result[0], 20);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A + 10", 25, std::vector<unsigned int*>{m1.data.data()});
+    EXPECT_EQ(result[0], 11);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("10 + A", 25, std::vector<unsigned int*>{m2.data.data()});
+    EXPECT_EQ(result[0], 12);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A + B", 25, std::vector<unsigned int*>{m1.data.data(), m2.data.data()});
+    EXPECT_EQ(result[0], 3);
+    result = OpenCLMain::instance().evaluateArithmeticFormula<unsigned int>("1 + 1 + 1 + 1 + 1");
+    EXPECT_EQ(result[0], 5);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A + 10 + A", 25, std::vector<unsigned int*>{m1.data.data()});
+    EXPECT_EQ(result[0], 12);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("1 + A + B + 13 + C + D + 2032 + E", 25, std::vector<unsigned int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
+    EXPECT_EQ(result[0], 2061);
+
 }
 
 // TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_AdditionBaseCase) {
