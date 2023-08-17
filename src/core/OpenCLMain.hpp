@@ -47,14 +47,6 @@ private:
 	static inline char                    mNewCacheIndex;
 
 private:
-	static inline const std::unordered_map<char, int> precedence = {{'+', 1}, {'-', 1}, {'*', 2}, {'/', 2}, {'^', 3}};
-
-	static bool isOperator(char c)
-	{
-		return precedence.find(c) != precedence.end();
-	}
-
-private:
 	OpenCLMain()
 	{
 		// Handel Platforms
@@ -145,17 +137,17 @@ private:
 					C[get_global_id(0)] = 0;
 				}
 			}
-			void kernel kernelDividedByConstant(global const int* A, global int* B, const int C) {
+			void kernel kernelDividingByConstant(global const int* A, global int* B, const int C) {
 				if (C != 0) {  // Ensure don't divide by zero
 					B[get_global_id(0)] = A[get_global_id(0)] / C;
 				} else {
 					B[get_global_id(0)] = 0;
 				}
 			}
-			void kernel kernelOneOverArray(global const int* A, global int* B) {
-				int value = A[get_global_id(0)];
-				if (value != 0) {  // Ensure don't divide by zero
-					B[get_global_id(0)] = 1 / value;
+			void kernel kernelConstantDividingBy(global const int* A, global int* B, const int C) {
+				int aValue = A[get_global_id(0)];
+				if (aValue != 0) {  // Ensure don't divide by zero
+					B[get_global_id(0)] = C / aValue;
 				} else {
 					B[get_global_id(0)] = 0;
 				}
@@ -183,6 +175,12 @@ public:
 		std::stack<char>        operators;
 		std::string             token;
 
+		auto isOperator = [](char c) -> bool {
+			return c == '+' || c == '-' || c == '*' || c == '/';
+		};
+
+		std::unordered_map<char, int> precedence = {{'+', 1}, {'-', 1}, {'*', 2}, {'/', 2}};
+
 		for(char ch : expression) {
 			if(isspace(ch)) {
 				if(!token.empty()) {
@@ -196,7 +194,7 @@ public:
 				}
 
 				while(!operators.empty() && isOperator(operators.top()) &&
-					  precedence.at(ch) <= precedence.at(operators.top())) {
+					  precedence[ch] <= precedence[operators.top()]) {
 					output.push(std::string(1, operators.top()));
 					operators.pop();
 				}
@@ -233,13 +231,6 @@ public:
 			operators.pop();
 		}
 
-		// std::queue<std::string> copy = output;
-		// std::string             result;
-		// while(!copy.empty()) {
-		// 	result += copy.front() + " ";
-		// 	copy.pop();
-		// }
-		// std::cout << "Postfix queue " << result << "\n";
 		return output;
 	}
 
@@ -253,13 +244,14 @@ public:
 	 * @param values
 	 */
 	template<typename T>
-	static std::vector<T> evaluateArithmeticFormula(const std::string& expression,
-													unsigned int       arrayLength = 0,
-													std::vector<T*>    arrayValues = std::vector<T*>())
+	static std::vector<T> evaluateArithmeticFormula(const std::string&    expression,
+													const unsigned int    arrayLength = 0,
+													const std::vector<T*> arrayValues = std::vector<T*>())
 	{
 		// std::cout << "Evaluate Arithmetic Formula: " << expression << "\n";
 		mArrayLength = arrayLength;
-
+		// TODO: check for sequencial order start with A
+		// TODO: warning for length not align with 2^power
 		if(!std::is_arithmetic<T>::value) {
 			throw std::invalid_argument("Error: vector type is not numeric.");
 		}
@@ -293,6 +285,12 @@ public:
 			cl::Kernel(mArithmeticProgram, "kernelMultiplicatingArray"));
 		auto kernelMultiplicatingConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
 			cl::Kernel(mArithmeticProgram, "kernelMultiplicatingConstant"));
+		auto kernelDividingByArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
+			cl::Kernel(mArithmeticProgram, "kernelDividingByArray"));
+		auto kernelDividingByConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelDividingByConstant"));
+		auto kernelConstantDividingBy = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelConstantDividingBy"));
 
 		// Initialize parameter
 		mQueue  = cl::CommandQueue(mContext, mDevice);
@@ -316,7 +314,7 @@ public:
 
 		// set for tracking cache index
 		mAvailableCacheIndex.clear();
-		mAvailableCacheIndex.insert('A' + arrayValues.size());
+		mAvailableCacheIndex.insert('A' + arrayValues.size());	
 		mNewCacheIndex = 'A' + arrayValues.size() + 1;
 
 		// Forming the post fix queue
@@ -329,16 +327,22 @@ public:
 		while(!mPostfixNotationQueue.empty()) {
 			std::string token = mPostfixNotationQueue.front();
 			mPostfixNotationQueue.pop();
-			// std::cout << "token:" << token << "\n";
 			if(std::regex_match(token, std::regex("-?[0-9]+"))) {
+				// std::cout << "Push " << token << "\n";
 				evalStack.push(std::stoi(token));
 			} else if(token.size() == 1 && isupper(token[0])) {
+				// std::cout << "Push " << token << "\n";
 				evalStack.push(token[0]);
 			} else if(token == "+") {
 				std::variant<int, char> second = evalStack.top();
 				evalStack.pop();
 				std::variant<int, char> first = evalStack.top();
 				evalStack.pop();
+				// std::visit([&first, &second](auto firstValue) {
+				// 	std::visit([&firstValue, &second](auto secondValue) {
+				// 		std::cout << "Caculate " << firstValue << " + " << secondValue << "\n";
+				// 	}, second);
+				// }, first);
 
 				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
 					evalStack.push(std::get<int>(first) + std::get<int>(second));
@@ -348,7 +352,7 @@ public:
 										 mBuffers[std::get<char>(first) - 'A'],
 										 mBuffers[index - 'A'],
 										 std::get<int>(second));
-					if(std::get<char>(first) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
@@ -360,7 +364,7 @@ public:
 										 mBuffers[index - 'A'],
 										 std::get<int>(first))
 						.wait();
-					if(std::get<char>(second) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -372,11 +376,11 @@ public:
 									  mBuffers[std::get<char>(second) - 'A'],
 									  mBuffers[index - 'A'])
 						.wait();
-					if(std::get<char>(first) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(std::get<char>(second) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -387,6 +391,11 @@ public:
 				evalStack.pop();
 				std::variant<int, char> first = evalStack.top();
 				evalStack.pop();
+				// std::visit([&first, &second](auto firstValue) {
+				// 	std::visit([&firstValue, &second](auto secondValue) {
+				// 		std::cout << "Caculate " << firstValue << " - " << secondValue << "\n";
+				// 	}, second);
+				// }, first);
 
 				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
 					evalStack.push(std::get<int>(first) - std::get<int>(second));
@@ -397,7 +406,7 @@ public:
 											  mBuffers[index - 'A'],
 											  std::get<int>(second))
 						.wait();
-					if(std::get<char>(first) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
@@ -409,7 +418,7 @@ public:
 											  mBuffers[index - 'A'],
 											  std::get<int>(first))
 						.wait();
-					if(std::get<char>(second) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -421,11 +430,11 @@ public:
 										   mBuffers[std::get<char>(second) - 'A'],
 										   mBuffers[index - 'A'])
 						.wait();
-					if(std::get<char>(first) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(std::get<char>(second) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -436,6 +445,11 @@ public:
 				evalStack.pop();
 				std::variant<int, char> first = evalStack.top();
 				evalStack.pop();
+				// std::visit([&first, &second](auto firstValue) {
+				// 	std::visit([&firstValue, &second](auto secondValue) {
+				// 		std::cout << "Caculate " << firstValue << " * " << secondValue << "\n";
+				// 	}, second);
+				// }, first);
 
 				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
 					evalStack.push(std::get<int>(first) * std::get<int>(second));
@@ -446,7 +460,7 @@ public:
 												 mBuffers[index - 'A'],
 												 std::get<int>(second))
 						.wait();
-					if(std::get<char>(first) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
@@ -458,7 +472,7 @@ public:
 												 mBuffers[index - 'A'],
 												 std::get<int>(first))
 						.wait();
-					if(std::get<char>(second) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -470,35 +484,88 @@ public:
 											  mBuffers[std::get<char>(second) - 'A'],
 											  mBuffers[index - 'A'])
 						.wait();
-					if(std::get<char>(first) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(std::get<char>(second) >= arrayValues.size())  // meaning is a cache index
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(index);
 				}
-			}
-			// else if(token == "/") {
-			// 	double second = evalStack.top(); evalStack.pop();
-			// 	double first = evalStack.top(); evalStack.pop();
-			// 	std::cout << first << " / " << second << std::endl;
-			// 	evalStack.push(0); // stub result
-			// }
-			// else if(token.size() == 1 && isupper(token[0])) {
-			// 	std::cout << "Variable " << token << " with value " << values[token[0]] << std::endl;
-			// 	evalStack.push(values[token[0]]);
-			// }
-			// else if() {  // Check if the token matches the pattern for positive integers
-			// 	int value = std::stoi(token);  // Convert the token to an integer
-			// 	std::cout << "Integer: " << value << std::endl;
-			// 	evalStack.push(value);
-			// }
-			else {
+			} else if(token == "/") {
+				std::variant<int, char> second = evalStack.top();
+				evalStack.pop();
+				std::variant<int, char> first = evalStack.top();
+				evalStack.pop();
+				// std::visit([&first, &second](auto firstValue) {
+				// 	std::visit([&firstValue, &second](auto secondValue) {
+				// 		std::cout << "Caculate " << firstValue << " / " << secondValue << "\n";
+				// 	}, second);
+				// }, first);
+
+				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
+					evalStack.push(std::get<int>(first) / std::get<int>(second));
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
+					char index = getCacheIndex<T>();
+					kernelDividingByConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											 mBuffers[std::get<char>(first) - 'A'],
+											 mBuffers[index - 'A'],
+											 std::get<int>(second))
+						.wait();
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(first));
+					}
+					evalStack.push(index);
+				} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
+					char index = getCacheIndex<T>();
+					kernelConstantDividingBy(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											 mBuffers[std::get<char>(second) - 'A'],
+											 mBuffers[index - 'A'],
+											 std::get<int>(first))
+						.wait();
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(second));
+					}
+					evalStack.push(index);
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
+					char index = getCacheIndex<T>();
+					kernelDividingByArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										  mBuffers[std::get<char>(first) - 'A'],
+										  mBuffers[std::get<char>(second) - 'A'],
+										  mBuffers[index - 'A'])
+						.wait();
+					if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(first));
+					}
+					if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(second));
+					}
+					evalStack.push(index);
+				}
+			} else {
 				std::cout << "unknown token :" << token << std::endl;
 			}
+
+			// std::vector<T>          resultVector(1);
+			// std::variant<int, char> result = evalStack.top();
+			// if(std::holds_alternative<char>(result)) {
+			// 	std::cout << "ref " << std::get<char>(result);
+			// 	resultVector.resize(mArrayLength);
+			// 	mQueue.enqueueReadBuffer(mBuffers[std::get<char>(result) - 'A'],
+			// 							 CL_TRUE,
+			// 							 0,
+			// 							 sizeof(T) * mArrayLength,
+			// 							 resultVector.data());
+			// } else {
+			// 	resultVector[0] = std::get<int>(result);
+			// }
+			// std::cout << " Stack top " << resultVector[0] << "\n";
 		}
 
 		// Final result
@@ -526,33 +593,25 @@ public:
 	template<typename T>
 	static char getCacheIndex()
 	{
+		// std::cout << "Pool has ";
+		// for(auto ch: mAvailableCacheIndex) {
+		// 	std::cout << ch;
+		// }
+		// std::cout << std::endl;
+
 		char index;
 		if(!mAvailableCacheIndex.empty()) {
 			index = *mAvailableCacheIndex.begin();
 			mAvailableCacheIndex.erase(mAvailableCacheIndex.begin());
 		} else {
 			index = mNewCacheIndex;
-			mAvailableCacheIndex.insert(mNewCacheIndex);
 			mNewCacheIndex = mNewCacheIndex + 1;
 			mBuffers.push_back(cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(T) * mArrayLength));
+			// std::cout << static_cast<char>(mNewCacheIndex - 1) << " allocated. new buffer allocated.\n";
 		}
+		// std::cout << index << " allocated.\n";
 		return index;
 	}
-	// Retrieve data
-	// mQueue.enqueueReadBuffer(C_d, CL_TRUE, 0, sizeof(int) * SIZE, C_h);
-	// static inline cl::Buffer A_d;
-	// static inline cl::Buffer B_d;
-	// static inline cl::Buffer C_d;
-
-	// // Example cont'd
-	// for (size_t i = 0; i < 20; i++)
-	// {
-	// 	std::cout << C_h[i];
-	// }
-	// std::cout << "\n";
-	// clReleaseMemObject(buffer);
-	// clReleaseKernel(kernel);
-	// clReleaseCommandQueue(queue);
 
 	~OpenCLMain()
 	{
