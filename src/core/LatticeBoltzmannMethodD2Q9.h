@@ -5,37 +5,31 @@
 #include <array>
 #include <memory>
 
+/**
+ * @brief D2Q9 Meta Data Description
+ *
+ * - f_0: corresponding to speed c(0,0)
+ * - f_1: corresponding to speed c(1,0)
+ * - f_2: corresponding to speed c(0,1)
+ * - f_3: corresponding to speed c(-1,0)
+ * - f_4: corresponding to speed c(0,-1)
+ * - f_5: corresponding to speed c(1,1)
+ * - f_6: corresponding to speed c(-1,1)
+ * - f_7: corresponding to speed c(-1,-1)
+ * - f_8: corresponding to speed c(1,-1)
+ *
+ * Constants:
+ * - DT: 1
+ * - DX: 1
+ * - DY: 1
+ * - D: 3 (2 + 1)
+ * - K_SIZE: 9
+ * - C_SPEED_SQUARED_INVERSE: 3 (Assuming dx = dy = dt)
+ * - WEIGHT: {4.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 36, 1.0 / 36, 1.0 / 36, 1.0 / 36}
+ */
 class LatticeBoltzmannMethodD2Q9
 {
-	// D2Q9 Meta data
-	// - f_0 corresonding to speed c(0,0)
-	// - f_1 corresonding to speed c(1,0)
-	// - f_2 corresonding to speed c(0,1)
-	// - f_3 corresonding to speed c(-1,0)
-	// - f_4 corresonding to speed c(0,-1)
-	// - f_5 corresonding to speed c(1,1)
-	// - f_6 corresonding to speed c(-1,1)
-	// - f_7 corresonding to speed c(-1,-1)
-	// - f_8 corresonding to speed c(1,-1)
-private:
 	static inline constexpr unsigned int MATRIX_SIZE = 9;  // the number of direction
-	// 	static inline constexpr unsigned int          DT                      = 1;
-	// 	static inline constexpr unsigned int          DX                      = 1;
-	// 	static inline constexpr unsigned int          DY                      = 1;
-	// 	static inline constexpr unsigned int          D                       = 2 + 1;
-	// 	static inline constexpr unsigned int          K_SIZE                  = 9;
-	// 	static inline constexpr unsigned int          C_SPEED_SQUARED_INVERSE = 3;  // Assume dx = dy = dt
-	// 	static inline constexpr std::array<double, 9> WEIGHT =
-	// 		{4.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 9, 1.0 / 36, 1.0 / 36, 1.0 / 36, 1.0 / 36};
-	// 	static inline constexpr std::array<std::pair<int, int>, 9> C = {{std::make_pair(0, 0),
-	// 																	 std::make_pair(1, 0),
-	// 																	 std::make_pair(0, 1),
-	// 																	 std::make_pair(-1, 0),
-	// 																	 std::make_pair(0, -1),
-	// 																	 std::make_pair(1, 1),
-	// 																	 std::make_pair(-1, 1),
-	// 																	 std::make_pair(-1, -1),
-	// 																	 std::make_pair(1, -1)}};
 
 public:
 	enum BoundaryType { NO, BOUNCEBACK, OPEN, CONSTANT, ADIABATIC };
@@ -100,13 +94,14 @@ private:  // Internal data
 	CartesianMatrix<unsigned int> mDensity[MATRIX_SIZE];
 	CartesianMatrix<unsigned int> mTemperature[MATRIX_SIZE];
 
-private:  // Derived data
-	std::vector<unsigned int> mOmega_m;
-	std::vector<unsigned int> mOmega_s;
+private:                                 // Derived data
+	std::vector<unsigned int> mOmega_m;  // density
+	std::vector<unsigned int> mOmega_s;  // temperature
 	std::vector<unsigned int> mVelocityU;
 	std::vector<unsigned int> mVelocityV;
-	// std::vector<unsigned int> mResult1;
-	// std::vector<unsigned int> mResult2;
+	std::vector<unsigned int> mResultU2;   // u^2
+	std::vector<unsigned int> mResultV2;   // v^2
+	std::vector<unsigned int> mResultUV2;  // u^2 + v^2
 
 public:  // Pre allocate memory for output
 	std::vector<unsigned int> mResultingDensityArray;
@@ -132,14 +127,7 @@ public:
 							   std::vector<unsigned int> initialDensityArray       = std::vector<unsigned int>(),
 							   std::vector<unsigned int> initialTemperatureArray   = std::vector<unsigned int>(),
 							   std::vector<unsigned int> kinematicViscosityArray   = std::vector<unsigned int>(),
-							   std::vector<unsigned int> diffusionCoefficientArray = std::vector<unsigned int>()
-							   // std::unique_ptr<CartesianMatrix<unsigned int>>
-							   // initialKinematicViscosityMatrix,
-							   // std::unique_ptr<CartesianMatrix<unsigned int>> initialDiffusionCoefficientMatrix,
-							   // std::unique_ptr<CartesianMatrix<unsigned int>> initialSourceDensityMatrix,
-							   // std::unique_ptr<CartesianMatrix<unsigned int>> initialSourceTemperatureMatrix,
-							   // std::vector<Entity> entities = std::vector<Entity>()
-	);
+							   std::vector<unsigned int> diffusionCoefficientArray = std::vector<unsigned int>());
 
 	void step(bool saveImage = false);
 	void buildResultingDensityMatrix();

@@ -13,7 +13,7 @@ protected:
 };
 
 TEST_F(LatticeBoltzmannMethodD2Q9Test, Diffusion) {
-        LatticeBoltzmannMethodD2Q9 lbm (20, 20, 
+        LatticeBoltzmannMethodD2Q9 lbm (24, 24, 
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),

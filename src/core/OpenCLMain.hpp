@@ -248,19 +248,30 @@ public:
 													const unsigned int    arrayLength = 0,
 													const std::vector<T*> arrayValues = std::vector<T*>())
 	{
-		// std::cout << "Evaluate Arithmetic Formula: " << expression << "\n";
 		mArrayLength = arrayLength;
-		// TODO: check for sequencial order start with A
-		// TODO: warning for length not align with 2^power
+
 		if(!std::is_arithmetic<T>::value) {
-			throw std::invalid_argument("Error: vector type is not numeric.");
+			throw std::invalid_argument("Array values' type are not numeric.");
+		}
+		if(arrayLength != 0) {
+			if(!(mArrayLength && !(mArrayLength & (mArrayLength - 1)))) {
+				throw std::invalid_argument("Array length are not power of 2.");
+			}
 		}
 
+		char refIndex = 'A';
 		// Check for number of variable mismatch by counting unique uppercase characters
 		std::set<char> uniqueUppercaseChars;
 		for(char ch : expression) {
 			if(isupper(ch)) {
-				uniqueUppercaseChars.insert(ch);
+				if(ch == refIndex) {
+					uniqueUppercaseChars.insert(ch);
+					refIndex = refIndex + 1;
+				} else if(ch == (refIndex - 1)) {
+					continue;
+				} else {
+					throw std::invalid_argument("Variable Reference are not in alphabatic order.");
+				}
 			}
 		}
 		// std::cout << "Total of " << uniqueUppercaseChars.size() << " variables detected.\n";
