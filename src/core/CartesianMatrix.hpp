@@ -27,8 +27,9 @@ private:
 public:
 	std::pair<int, int> base{0, 0};
 	std::vector<T>      data;
-	int                 mWidth;
-	int                 mHeight;
+	unsigned int        mWidth;
+	unsigned int        mHeight;
+	unsigned int        mLength;
 
 public:
 	struct Index {
@@ -37,60 +38,34 @@ public:
 
 	enum Direction { UP, DOWN, LEFT, RIGHT };
 
-	CartesianMatrix(): mWidth(MATRIX_DEFAULT_WIDTH), mHeight(MATRIX_DEFAULT_HEIGHT)
-	{
-		data.resize(mWidth * mHeight, T());
-	}
-
-	CartesianMatrix(unsigned int nRow, unsigned int nColumn, T initialValue = T()): mWidth(nColumn), mHeight(nRow)
-	{
-		data.resize(mWidth * mHeight, initialValue);
-	}
-
-	CartesianMatrix(unsigned int nRow, unsigned int nColumn, const std::vector<std::vector<T>>& values):
+	CartesianMatrix(const unsigned int nColumn      = MATRIX_DEFAULT_WIDTH,
+					const unsigned int nRow         = MATRIX_DEFAULT_HEIGHT,
+					const T            initialValue = T()):
 		mWidth(nColumn),
-		mHeight(nRow)
+		mHeight(nRow),
+		mLength(nRow * nColumn)
 	{
-		if(values.empty()) {
-			data.resize(mWidth * mHeight, T());
-		} else {
-			if(values.size() != nRow) {
-				throw std::out_of_range("Row count mismatch");
-			}
+		data.resize(mLength, initialValue);
+	}
 
-			// Use a shared exception pointer to capture the first exception thrown.
-			std::exception_ptr excPtr = nullptr;
+	CartesianMatrix(const unsigned int   nColumn,
+					const unsigned int   nRow,
+					const std::vector<T> values,
+					const unsigned int   magnification = 1):
+		mWidth(nColumn),
+		mHeight(nRow),
+		mLength(nRow * nColumn)
+	{
+		if(values.size() != mLength) {
+			std::string errMsg = "Inconsistent std::vector length: ";
+			errMsg += std::to_string(values.size()) + " vs " + std::to_string(mLength);
+			throw std::invalid_argument(errMsg);
+		}
 
+		data.resize(mLength);
 #pragma omp parallel for
-			for(size_t i = 0; i < values.size(); i++) {
-				try {
-					if(values[i].size() != nColumn) {
-						throw std::out_of_range("Column count mismatch for a specific row");
-					}
-				} catch(...) {
-// Store exception and break from the loop
-#pragma omp critical
-					{
-						if(!excPtr) {
-							excPtr = std::current_exception();
-						}
-					}
-				}
-			}
-
-			// Rethrow the exception outside the parallel region
-			if(excPtr) {
-				std::rethrow_exception(excPtr);
-			}
-
-			data.resize(mWidth * mHeight);
-
-#pragma omp parallel for collapse(2)
-			for(size_t i = 0; i < mHeight; ++i) {
-				for(size_t j = 0; j < mWidth; ++j) {
-					data[i * mWidth + j] = values[i][j];
-				}
-			}
+		for(size_t i = 0; i < values.size(); i++) {
+			data[i] = values.at(i) * magnification;
 		}
 	}
 

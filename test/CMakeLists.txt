@@ -29,10 +29,7 @@ target_compile_options(MainTests PRIVATE --coverage)
 target_link_options(MainTests PRIVATE --coverage)
 
 # Executable Benchmark
-add_executable(MainBenchmarks
-    # core/CartesianMatrixBenchmark.cpp
-    # core/LatticeBoltzmannMethodD2Q9Benchmark.cpp
-    core/OpenCLMainBenchmark.cpp)
+add_executable(MainBenchmarks core/MainBenchmark.cpp)
 target_link_libraries(MainBenchmarks benchmark::benchmark_main)
 target_link_libraries(MainBenchmarks benchmark::benchmark)
 target_link_libraries(MainBenchmarks OpenMP::OpenMP_CXX)

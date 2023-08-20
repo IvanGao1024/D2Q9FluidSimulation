@@ -298,6 +298,7 @@ public:
 		if(arrayValues.size() != 0) {
 			mBuffers = std::vector<cl::Buffer>(arrayValues.size() + 1);
 			// Allocate buffer memory
+#pragma omp parallel for
 			for(size_t i = 0; i < arrayValues.size(); i++) {
 				mBuffers[i] = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(T) * mArrayLength);
 			}
@@ -305,16 +306,15 @@ public:
 			// std::cout << "Total of " << arrayValues.size() + 1 << " buffer created.\n";
 
 			// Initialize buffer
+#pragma omp parallel for
 			for(size_t i = 0; i < arrayValues.size(); i++) {
 				mQueue.enqueueWriteBuffer(mBuffers[i], CL_TRUE, 0, sizeof(T) * mArrayLength, arrayValues[i]);
 			}
-		} else {
-			// std::cout << "Trivial Arithmetic Formula. No buffer or kernel initialized.\n";
 		}
 
 		// set for tracking cache index
 		mAvailableCacheIndex.clear();
-		mAvailableCacheIndex.insert('A' + arrayValues.size());	
+		mAvailableCacheIndex.insert('A' + arrayValues.size());
 		mNewCacheIndex = 'A' + arrayValues.size() + 1;
 
 		// Forming the post fix queue
@@ -604,7 +604,7 @@ public:
 			index = *mAvailableCacheIndex.begin();
 			mAvailableCacheIndex.erase(mAvailableCacheIndex.begin());
 		} else {
-			index = mNewCacheIndex;
+			index          = mNewCacheIndex;
 			mNewCacheIndex = mNewCacheIndex + 1;
 			mBuffers.push_back(cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(T) * mArrayLength));
 			// std::cout << static_cast<char>(mNewCacheIndex - 1) << " allocated. new buffer allocated.\n";

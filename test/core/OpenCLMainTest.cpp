@@ -198,6 +198,5 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedCase) {
         "E + 3 + A * (B - 4 / 2) + (C / 3) * (7 - E) + (E + 3) / D - 9",
         25,
         std::vector<int*>{m1.data.data(), m2.data.data(), m3.data.data(), m4.data.data(), m5.data.data()});
-
     EXPECT_EQ(result[0], 3);
 }
