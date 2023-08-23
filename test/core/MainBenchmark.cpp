@@ -12,7 +12,7 @@ static void LatticeBoltzmannMethodD2Q9_Initiation(benchmark::State& state) {
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
-        m1.data, m1.data);
+        m1.getShiftedData(), m1.getShiftedData());
     }
 }
 BENCHMARK(LatticeBoltzmannMethodD2Q9_Initiation);
@@ -39,7 +39,7 @@ static void LatticeBoltzmannMethodD2Q9_Step(benchmark::State& state) {
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
-        m1.data, m1.data);
+        m1.getShiftedData(), m1.getShiftedData());
     for (auto _ : state) {
         lbm.step();
     }
