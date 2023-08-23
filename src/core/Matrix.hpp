@@ -146,6 +146,11 @@ public:  // Helper getter
 		return mData.data();
 	}
 
+	// T getData(const unsigned int nRow, const unsigned int nCol)
+	// {
+	// 	return mData.at(((nRow * N) + (nCol + mColShiftIndex + M) % M - mRowShiftIndex * N + LENGTH) % LENGTH);
+	// }
+
 	std::vector<T> getShiftedData(int x = 0, int y = 0) const
 	{
 		std::vector<T> shiftedData(LENGTH);
@@ -188,7 +193,6 @@ public:
 	void indexRevision(const unsigned int nRow, const unsigned int nCol, const T& newValue)
 	{
 		mData[((nRow * N) + (nCol + mColShiftIndex + M) % M - mRowShiftIndex * N + LENGTH) % LENGTH] = newValue;
-		// std::cout << ((nRow * N) + (nCol + mColShiftIndex + M) % M - mRowShiftIndex * N + LENGTH) % LENGTH << std::endl;
 	}
 
 	void rowRevision(const unsigned int nRow, const T& newValue)

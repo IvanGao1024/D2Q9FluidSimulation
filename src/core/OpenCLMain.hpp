@@ -108,21 +108,16 @@ private:
 
 		// Initiate Arithmetic Kernel
 		std::string kernelCode = R"(
-			void kernel kernelAddingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int width, const unsigned int height, const unsigned int length) {
+			void kernel kernelAddingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int M, const unsigned int N) {
 				unsigned int i = get_global_id(0);
-				int baseIndex = (i - (i % height));
-				int rowShiftA = ((i % height) + shiftARow + width) % width;
-				int rowShiftB = ((i % height) + shiftBRow + width) % width;
-				int shiftedIndexA = (baseIndex + rowShiftA - shiftACol * height + length) % length;
-				int shiftedIndexB = (baseIndex + rowShiftB - shiftBCol * height + length) % length;
-				C[i] = A[shiftedIndexA] + B[shiftedIndexB];
+				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexB = ((i - i % M) / N + shiftBRow ) %  N * M + (i - shiftBCol) % M;
+				C[i] = A[originalIndexA] + B[originalIndexB];
 			}
-			void kernel kernelAddingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int width, const unsigned int height, const unsigned int length) {
+			void kernel kernelAddingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
 				unsigned int i = get_global_id(0);
-				int baseIndex = (i - (i % height));
-				int rowShiftA = ((i % height) + shiftARow + width) % width;
-				int shiftedIndexA = (baseIndex + rowShiftA - shiftACol * height + length) % length;
-				B[i] = A[shiftedIndexA] + C;
+				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				B[i] = A[originalIndexA] + C;
 			}
 
 			void kernel kernelSubtractingArray(global const unsigned int* A, global const unsigned int* B, global unsigned int* C) {
@@ -319,7 +314,6 @@ public:
 										   unsigned int,
 										   unsigned int,
 										   unsigned int,
-										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingArray"));
 		auto kernelAddingConstant =
 			cl::compatibility::make_kernel<cl::Buffer,
@@ -327,7 +321,6 @@ public:
 										   unsigned int,
 										   unsigned int,
 										   int,
-										   unsigned int,
 										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
 		// auto kernelSubtractingArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
@@ -412,8 +405,7 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
 						mArrayWidth,
-						mArrayHeight,
-						mArrayLength)
+						mArrayHeight)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -431,8 +423,7 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
 						mArrayWidth,
-						mArrayHeight,
-						mArrayLength)
+						mArrayHeight)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -453,8 +444,7 @@ public:
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
 						mArrayWidth,
-						mArrayHeight,
-						mArrayLength)
+						mArrayHeight)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
