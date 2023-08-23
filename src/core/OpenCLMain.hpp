@@ -120,14 +120,21 @@ private:
 				B[i] = A[originalIndexA] + C;
 			}
 
-			void kernel kernelSubtractingArray(global const unsigned int* A, global const unsigned int* B, global unsigned int* C) {
-				C[get_global_id(0)] = A[get_global_id(0)] - B[get_global_id(0)];
+			void kernel kernelSubtractingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int M, const unsigned int N) {
+				unsigned int i = get_global_id(0);
+				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexB = ((i - i % M) / N + shiftBRow ) %  N * M + (i - shiftBCol) % M;
+				C[i] = A[originalIndexA] - B[originalIndexB];
 			}
-			void kernel kernelSubtractingConstant(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
-				B[get_global_id(0)] = A[get_global_id(0)] - C;
+			void kernel kernelSubtractingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+				unsigned int i = get_global_id(0);
+				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				B[i] = A[originalIndexA] - C;
 			}
-			void kernel kernelConstantSubtracting(global const unsigned int* A, global unsigned int* B, const unsigned int C) {
-				B[get_global_id(0)] = C - A[get_global_id(0)];
+			void kernel kernelConstantSubtracting(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+				unsigned int i = get_global_id(0);
+				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				B[i] = C - A[originalIndexA];
 			}
 
 			void kernel kernelMultiplicatingArray(global const int* A, global const int* B, global int* C) {
@@ -256,25 +263,24 @@ public:
 		const std::string&                                       expression,
 		const unsigned int                                       arrayWidth  = 0,
 		const unsigned int                                       arrayHeight = 0,
-		const unsigned int                                       arrayLength = 0,
 		const std::vector<T*>                                    arrayValues = std::vector<T*>(),
 		const std::vector<std::pair<unsigned int, unsigned int>> arrayShifts =
 			std::vector<std::pair<unsigned int, unsigned int>>())
 	{
 		mArrayWidth   = arrayWidth;
 		mArrayHeight  = arrayHeight;
-		mArrayLength  = arrayLength;
+		mArrayLength  = mArrayWidth * mArrayHeight;
 		mBufferShifts = arrayShifts;
 
 		if(!std::is_arithmetic<T>::value) {
 			throw std::invalid_argument("Array values type are not numeric.");
 		}
-		if(arrayLength != 0) {
+		if(mArrayLength != 0) {
 			if(!(mArrayLength && !(mArrayLength & (mArrayLength - 1)))) {
 				throw std::invalid_argument("Array length are not power of 2.");
 			}
 		}
-		if(arrayWidth * arrayHeight != arrayLength) {
+		if(arrayWidth * arrayHeight != mArrayLength) {
 			throw std::invalid_argument("Given dimension mismatch.");
 		}
 		if(arrayShifts.size() != 0 && arrayShifts.size() != arrayValues.size()) {
@@ -323,12 +329,32 @@ public:
 										   int,
 										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
-		// auto kernelSubtractingArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
-		// 	cl::Kernel(mArithmeticProgram, "kernelSubtractingArray"));
-		// auto kernelSubtractingConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
-		// 	cl::Kernel(mArithmeticProgram, "kernelSubtractingConstant"));
-		// auto kernelConstantSubtracting = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
-		// 	cl::Kernel(mArithmeticProgram, "kernelConstantSubtracting"));
+		auto kernelSubtractingArray = cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelSubtractingArray"));
+		auto kernelSubtractingConstant = cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   int,
+										   unsigned int,
+										   unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelSubtractingConstant"));
+		auto kernelConstantSubtracting = cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   int,
+										   unsigned int,
+										   unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelConstantSubtracting"));
 		// auto kernelMultiplicatingArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
 		// 	cl::Kernel(mArithmeticProgram, "kernelMultiplicatingArray"));
 		// auto kernelMultiplicatingConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
@@ -457,61 +483,83 @@ public:
 					evalStack.push(cacheChar);
 				}
 			}
-			// else if(token == "-") {
-			// 	std::variant<int, char> second = evalStack.top();
-			// 	evalStack.pop();
-			// 	std::variant<int, char> first = evalStack.top();
-			// 	evalStack.pop();
-			// 	// std::visit([&first, &second](auto firstValue) {
-			// 	// 	std::visit([&firstValue, &second](auto secondValue) {
-			// 	// 		std::cout << "Caculate " << firstValue << " - " << secondValue << "\n";
-			// 	// 	}, second);
-			// 	// }, first);
+			else if(token == "-") {
+				std::variant<int, char> second = evalStack.top();
+				evalStack.pop();
+				std::variant<int, char> first = evalStack.top();
+				evalStack.pop();
+				// std::visit([&first, &second](auto firstValue) {
+				// 	std::visit([&firstValue, &second](auto secondValue) {
+				// 		std::cout << "Caculate " << firstValue << " - " << secondValue << "\n";
+				// 	}, second);
+				// }, first);
 
-			// 	if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
-			// 		evalStack.push(std::get<int>(first) - std::get<int>(second));
-			// 	} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
-			// 		char index = getCacheIndex<T>();
-			// 		kernelSubtractingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-			// 								  mBuffers[std::get<char>(first) - 'A'],
-			// 								  mBuffers[index - 'A'],
-			// 								  std::get<int>(second))
-			// 			.wait();
-			// 		if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(first));
-			// 		}
-			// 		evalStack.push(index);
-			// 	} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
-			// 		char index = getCacheIndex<T>();
-			// 		kernelConstantSubtracting(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-			// 								  mBuffers[std::get<char>(second) - 'A'],
-			// 								  mBuffers[index - 'A'],
-			// 								  std::get<int>(first))
-			// 			.wait();
-			// 		if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(second));
-			// 		}
-			// 		evalStack.push(index);
-			// 	} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
-			// 		char index = getCacheIndex<T>();
-			// 		kernelSubtractingArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-			// 							   mBuffers[std::get<char>(first) - 'A'],
-			// 							   mBuffers[std::get<char>(second) - 'A'],
-			// 							   mBuffers[index - 'A'])
-			// 			.wait();
-			// 		if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(first));
-			// 		}
-			// 		if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(second));
-			// 		}
-			// 		evalStack.push(index);
-			// 	}
-			// } else if(token == "*") {
+				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
+					evalStack.push(std::get<int>(first) - std::get<int>(second));
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
+					char         cacheChar = getCacheIndex<T>();
+					unsigned int charIndex = std::get<char>(first) - 'A';
+					kernelSubtractingConstant(
+						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+						mBuffers[cacheChar - 'A'],
+						mBuffers[charIndex],
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
+						std::get<int>(second),
+						mArrayWidth,
+						mArrayHeight)
+						.wait();
+					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(first));
+					}
+					evalStack.push(cacheChar);
+				} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar = getCacheIndex<T>();
+					unsigned int charIndex = std::get<char>(second) - 'A';
+					kernelConstantSubtracting(
+						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+						mBuffers[cacheChar - 'A'],
+						mBuffers[charIndex],
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
+						std::get<int>(first),
+						mArrayWidth,
+						mArrayHeight)
+						.wait();
+					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(second));
+					}
+					evalStack.push(cacheChar);
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar  = getCacheIndex<T>();
+					unsigned int charIndex1 = std::get<char>(first) - 'A';
+					unsigned int charIndex2 = std::get<char>(second) - 'A';
+					kernelSubtractingArray(
+						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+						mBuffers[cacheChar - 'A'],
+						mBuffers[charIndex1],
+						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].first,
+						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].second,
+						mBuffers[charIndex2],
+						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
+						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
+						mArrayWidth,
+						mArrayHeight)
+						.wait();
+					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(first));
+					}
+					if(charIndex2 >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(second));
+					}
+					evalStack.push(cacheChar);
+				}
+			}
+			//  else if(token == "*") {
 			// 	std::variant<int, char> second = evalStack.top();
 			// 	evalStack.pop();
 			// 	std::variant<int, char> first = evalStack.top();
