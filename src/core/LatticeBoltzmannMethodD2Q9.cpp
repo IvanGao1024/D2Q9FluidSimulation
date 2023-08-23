@@ -34,27 +34,27 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int             
 #pragma omp parallel sections
 	{
 #pragma omp section
-		{mDensity[0] = CartesianMatrix<unsigned int>(mWidth, mHeight, initialDensityArray, 44);
+		{mDensity[0] = Matrix<unsigned int>(mWidth, mHeight, initialDensityArray, 44);
 }
 #pragma omp section
 {
-	mDensity[1] = CartesianMatrix<unsigned int>(mWidth, mHeight, initialDensityArray, 11);
+	mDensity[1] = Matrix<unsigned int>(mWidth, mHeight, initialDensityArray, 11);
 }
 #pragma omp section
 {
-	mDensity[5] = CartesianMatrix<unsigned int>(mWidth, mHeight, initialDensityArray, 3);
+	mDensity[5] = Matrix<unsigned int>(mWidth, mHeight, initialDensityArray, 3);
 }
 #pragma omp section
 {
-	mTemperature[0] = CartesianMatrix<unsigned int>(mWidth, mHeight, initialTemperatureArray, 44);
+	mTemperature[0] = Matrix<unsigned int>(mWidth, mHeight, initialTemperatureArray, 44);
 }
 #pragma omp section
 {
-	mTemperature[1] = CartesianMatrix<unsigned int>(mWidth, mHeight, initialTemperatureArray, 11);
+	mTemperature[1] = Matrix<unsigned int>(mWidth, mHeight, initialTemperatureArray, 11);
 }
 #pragma omp section
 {
-	mTemperature[5] = CartesianMatrix<unsigned int>(mWidth, mHeight, initialTemperatureArray, 3);
+	mTemperature[5] = Matrix<unsigned int>(mWidth, mHeight, initialTemperatureArray, 3);
 }
 }
 
@@ -131,22 +131,30 @@ void LatticeBoltzmannMethodD2Q9::collision()
 	if(mKinematicViscosityArrayRevised) {
 		mOmega_m = OpenCLMain::instance().evaluateArithmeticFormula(
 			"1 / ((A * 3) + 50)",
+			mWidth,
+			mHeight,
 			mLength,
 			std::vector<unsigned int*>{mKinematicViscosityArray.data()});
 	}
 	if(mDiffusionCoefficientArrayRevised) {
 		mOmega_s = OpenCLMain::instance().evaluateArithmeticFormula(
 			"1 / ((A * 3) + 50)",
+			mWidth,
+			mHeight,
 			mLength,
 			std::vector<unsigned int*>{mDiffusionCoefficientArray.data()});
 	}
 
 	mTemperature[0].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (100 - B) + B * 44 * C * 1",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mTemperature[0].getDataData(), mOmega_s.data(), mResultingTemperatureArray.data()}));
 	mTemperature[1].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D)",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[1].getDataData(),
 																					mOmega_s.data(),
@@ -154,6 +162,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityU.data()}));
 	mTemperature[2].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D)",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[2].getDataData(),
 																					mOmega_s.data(),
@@ -161,6 +171,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityV.data()}));
 	mTemperature[3].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D)",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[3].getDataData(),
 																					mOmega_s.data(),
@@ -168,6 +180,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityU.data()}));
 	mTemperature[4].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D)",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[4].getDataData(),
 																					mOmega_s.data(),
@@ -175,6 +189,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityV.data()}));
 	mTemperature[5].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D + 3 * E))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[5].getDataData(),
 																					mOmega_s.data(),
@@ -183,6 +199,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityV.data()}));
 	mTemperature[6].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D + 3 * E))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[6].getDataData(),
 																					mOmega_s.data(),
@@ -191,6 +209,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityV.data()}));
 	mTemperature[7].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D - 3 * E))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[7].getDataData(),
 																					mOmega_s.data(),
@@ -199,6 +219,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityV.data()}));
 	mTemperature[8].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D - 3 * E))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mTemperature[8].getDataData(),
 																					mOmega_s.data(),
@@ -206,17 +228,25 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mVelocityU.data(),
 																					mVelocityV.data()}));
 	mResultU2  = OpenCLMain::instance().evaluateArithmeticFormula("A * A",
+                                                                 mWidth,
+                                                                 mHeight,
                                                                  mLength,
                                                                  std::vector<unsigned int*>{mVelocityU.data()});
 	mResultV2  = OpenCLMain::instance().evaluateArithmeticFormula("A * A",
+                                                                 mWidth,
+                                                                 mHeight,
                                                                  mLength,
                                                                  std::vector<unsigned int*>{mVelocityV.data()});
 	mResultUV2 = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A + B",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mResultU2.data(), mResultV2.data()});
 	mDensity[0].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 15 * D))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mDensity[0].getDataData(),
 																					mOmega_m.data(),
@@ -224,6 +254,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mResultUV2.data()}));
 	mDensity[1].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (100 - B) + B * 44 * C * (100 + 3 * D + 45 * E - 15 * F))",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mDensity[1].getDataData(),
 								   mOmega_m.data(),
@@ -233,6 +265,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 								   mResultUV2.data()}));
 	mDensity[2].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (100 - B) + B * 44 * C * (100 + 3 * D + 45 * E - 15 * F))",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mDensity[2].getDataData(),
 								   mOmega_m.data(),
@@ -242,6 +276,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 								   mResultUV2.data()}));
 	mDensity[3].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (100 - B) + B * 44 * C * (100 - 3 * D + 45 * E - 15 * F))",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mDensity[3].getDataData(),
 								   mOmega_m.data(),
@@ -251,6 +287,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 								   mResultUV2.data()}));
 	mDensity[4].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (100 - B) + B * 44 * C * (100 - 3 * D + 45 * E - 15 * F))",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mDensity[4].getDataData(),
 								   mOmega_m.data(),
@@ -260,6 +298,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 								   mResultUV2.data()}));
 	mDensity[5].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D + 3 * E + 3 * F))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mDensity[5].getDataData(),
 																					mOmega_m.data(),
@@ -269,6 +309,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mResultUV2.data()}));
 	mDensity[6].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D + 3 * E + 3 * F))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mDensity[6].getDataData(),
 																					mOmega_m.data(),
@@ -278,6 +320,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mResultUV2.data()}));
 	mDensity[7].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D - 3 * E + 3 * F))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mDensity[7].getDataData(),
 																					mOmega_m.data(),
@@ -287,6 +331,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 																					mResultUV2.data()}));
 	mDensity[8].resetData(
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D - 3 * E + 3 * F))",
+														 mWidth,
+														 mHeight,
 														 mLength,
 														 std::vector<unsigned int*>{mDensity[8].getDataData(),
 																					mOmega_m.data(),
@@ -314,6 +360,8 @@ void LatticeBoltzmannMethodD2Q9::buildResultingDensityMatrix()
 {
 	mResultingDensityArray = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mDensity[0].getDataData(),
 								   mDensity[1].getDataData(),
@@ -330,6 +378,8 @@ void LatticeBoltzmannMethodD2Q9::buildResultingTemperatureMatrix()
 {
 	mResultingTemperatureArray = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3",
+		mWidth,
+		mHeight,
 		mLength,
 		std::vector<unsigned int*>{mTemperature[0].getDataData(),
 								   mTemperature[1].getDataData(),

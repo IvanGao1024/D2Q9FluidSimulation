@@ -13,7 +13,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 ## Executable Test
 add_executable(MainTests
-    core/CartesianMatrixTest.cpp
+    core/MatrixTest.cpp
     # core/LatticeBoltzmannMethodD2Q9Test.cpp
     core/OpenCLMainTest.cpp
     )

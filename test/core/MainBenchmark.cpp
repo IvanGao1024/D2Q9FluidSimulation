@@ -1,11 +1,11 @@
 #include <benchmark/benchmark.h>
 #include "../../src/core/OpenCLMain.hpp"
-#include "../../src/core/CartesianMatrix.hpp"
+#include "../../src/core/Matrix.hpp"
 #include "../../src/core/LatticeBoltzmannMethodD2Q9.h"
 #include "../../src/core/LatticeBoltzmannMethodD2Q9.cpp"
 
 static void LatticeBoltzmannMethodD2Q9_Initiation(benchmark::State& state) {
-    CartesianMatrix<unsigned int> m1(4096, 4096, 1);
+    Matrix<unsigned int> m1(4096, 4096, 1);
     for (auto _ : state) {
         LatticeBoltzmannMethodD2Q9 lbm (4096, 4096, 
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
@@ -17,8 +17,22 @@ static void LatticeBoltzmannMethodD2Q9_Initiation(benchmark::State& state) {
 }
 BENCHMARK(LatticeBoltzmannMethodD2Q9_Initiation);
 
+static void LatticeBoltzmannMethodD2Q9_Step(benchmark::State& state) {
+    Matrix<unsigned int> m1(4096, 4096, 1);
+    LatticeBoltzmannMethodD2Q9 lbm (4096, 4096, 
+        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
+        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
+        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
+        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
+        m1.getShiftedData(), m1.getShiftedData());
+    for (auto _ : state) {
+        lbm.step();
+    }
+}
+BENCHMARK(LatticeBoltzmannMethodD2Q9_Step);
+
 // static void LatticeBoltzmannMethodD2Q9_BuildResultMatrix(benchmark::State& state) {
-//     CartesianMatrix<unsigned int> m1(4096, 4096, 1);
+//     Matrix<unsigned int> m1(4096, 4096, 1);
 //     LatticeBoltzmannMethodD2Q9 lbm (4096, 4096, 
 //         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
 //         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
@@ -31,20 +45,6 @@ BENCHMARK(LatticeBoltzmannMethodD2Q9_Initiation);
 //     }
 // }
 // BENCHMARK(LatticeBoltzmannMethodD2Q9_BuildResultMatrix);
-
-static void LatticeBoltzmannMethodD2Q9_Step(benchmark::State& state) {
-    CartesianMatrix<unsigned int> m1(4096, 4096, 1);
-    LatticeBoltzmannMethodD2Q9 lbm (4096, 4096, 
-        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
-        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
-        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
-        LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
-        m1.getShiftedData(), m1.getShiftedData());
-    for (auto _ : state) {
-        lbm.step();
-    }
-}
-BENCHMARK(LatticeBoltzmannMethodD2Q9_Step);
 
 // static void LatticeBoltzmannMethodD2Q9_Diffusion(benchmark::State& state) {
 //     LatticeBoltzmannMethodD2Q9 lbm (8190, 8190, 
@@ -60,16 +60,16 @@ BENCHMARK(LatticeBoltzmannMethodD2Q9_Step);
 // BENCHMARK(LatticeBoltzmannMethodD2Q9_Diffusion);#include <benchmark/benchmark.h>
 
 // static void OpenCLMain_COMPLEX(benchmark::State& state) {
-//     CartesianMatrix<unsigned int> result(8192, 8192);
-//     CartesianMatrix<unsigned int> m0(8192, 8192, 1);
-//     CartesianMatrix<unsigned int> m1(8192, 8192, 2);
-//     CartesianMatrix<unsigned int> m2(8192, 8192, 3);
-//     CartesianMatrix<unsigned int> m3(8192, 8192, 4);
-//     CartesianMatrix<unsigned int> m4(8192, 8192, 5);
-//     CartesianMatrix<unsigned int> m5(8192, 8192, 6);
-//     CartesianMatrix<unsigned int> m6(8192, 8192, 7);
-//     CartesianMatrix<unsigned int> m7(8192, 8192, 8);
-//     CartesianMatrix<unsigned int> m8(8192, 8192, 9);
+//     Matrix<unsigned int> result(8192, 8192);
+//     Matrix<unsigned int> m0(8192, 8192, 1);
+//     Matrix<unsigned int> m1(8192, 8192, 2);
+//     Matrix<unsigned int> m2(8192, 8192, 3);
+//     Matrix<unsigned int> m3(8192, 8192, 4);
+//     Matrix<unsigned int> m4(8192, 8192, 5);
+//     Matrix<unsigned int> m5(8192, 8192, 6);
+//     Matrix<unsigned int> m6(8192, 8192, 7);
+//     Matrix<unsigned int> m7(8192, 8192, 8);
+//     Matrix<unsigned int> m8(8192, 8192, 9);
 //     OpenCLMain::instance();
 //     for (auto _ : state) {
 //         result.data = OpenCLMain::instance().evaluateArithmeticFormula(

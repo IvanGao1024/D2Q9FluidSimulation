@@ -39,13 +39,15 @@ private:
 	static inline cl::Program          mArithmeticProgram;
 
 	// parameter
-	static inline cl::CommandQueue          mQueue;
-	static inline cl::NDRange               mGlobal;
-	static inline unsigned int              mArrayLength;
-	static inline std::vector<cl::Buffer>   mBuffers;
-	static inline std::vector<unsigned int> mBufferShifts;
-	static inline std::set<char>            mAvailableCacheIndex;
-	static inline char                      mNewCacheIndex;
+	static inline cl::CommandQueue                                   mQueue;
+	static inline cl::NDRange                                        mGlobal;
+	static inline unsigned int                                       mArrayWidth;
+	static inline unsigned int                                       mArrayHeight;
+	static inline unsigned int                                       mArrayLength;
+	static inline std::vector<cl::Buffer>                            mBuffers;
+	static inline std::vector<std::pair<unsigned int, unsigned int>> mBufferShifts;
+	static inline std::set<char>                                     mAvailableCacheIndex;
+	static inline char                                               mNewCacheIndex;
 
 private:
 	OpenCLMain()
@@ -106,13 +108,21 @@ private:
 
 		// Initiate Arithmetic Kernel
 		std::string kernelCode = R"(
-			void kernel kernelAddingArray(global int* C, global const int* A, const unsigned int shiftA, global const int* B, const unsigned int shiftB, const unsigned int length) {
+			void kernel kernelAddingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int width, const unsigned int height, const unsigned int length) {
 				unsigned int i = get_global_id(0);
-				C[i] = A[(i + shiftA) % length] + B[(i + shiftB) % length];
+				int baseIndex = (i - (i % height));
+				int rowShiftA = ((i % height) + shiftARow + width) % width;
+				int rowShiftB = ((i % height) + shiftBRow + width) % width;
+				int shiftedIndexA = (baseIndex + rowShiftA - shiftACol * height + length) % length;
+				int shiftedIndexB = (baseIndex + rowShiftB - shiftBCol * height + length) % length;
+				C[i] = A[shiftedIndexA] + B[shiftedIndexB];
 			}
-			void kernel kernelAddingConstant(global int* B, global const int* A, const unsigned int shiftA, const int C, const unsigned int length) {
+			void kernel kernelAddingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int width, const unsigned int height, const unsigned int length) {
 				unsigned int i = get_global_id(0);
-				B[i] = A[(i + shiftA) % length] + C;
+				int baseIndex = (i - (i % height));
+				int rowShiftA = ((i % height) + shiftARow + width) % width;
+				int shiftedIndexA = (baseIndex + rowShiftA - shiftACol * height + length) % length;
+				B[i] = A[shiftedIndexA] + C;
 			}
 
 			void kernel kernelSubtractingArray(global const unsigned int* A, global const unsigned int* B, global unsigned int* C) {
@@ -248,11 +258,16 @@ public:
 	 */
 	template<typename T>
 	static std::vector<T> evaluateArithmeticFormula(
-		const std::string&              expression,
-		const unsigned int              arrayLength = 0,
-		const std::vector<T*>           arrayValues = std::vector<T*>(),
-		const std::vector<unsigned int> arrayShifts = std::vector<unsigned int>())
+		const std::string&                                       expression,
+		const unsigned int                                       arrayWidth  = 0,
+		const unsigned int                                       arrayHeight = 0,
+		const unsigned int                                       arrayLength = 0,
+		const std::vector<T*>                                    arrayValues = std::vector<T*>(),
+		const std::vector<std::pair<unsigned int, unsigned int>> arrayShifts =
+			std::vector<std::pair<unsigned int, unsigned int>>())
 	{
+		mArrayWidth   = arrayWidth;
+		mArrayHeight  = arrayHeight;
 		mArrayLength  = arrayLength;
 		mBufferShifts = arrayShifts;
 
@@ -264,7 +279,9 @@ public:
 				throw std::invalid_argument("Array length are not power of 2.");
 			}
 		}
-
+		if(arrayWidth * arrayHeight != arrayLength) {
+			throw std::invalid_argument("Given dimension mismatch.");
+		}
 		if(arrayShifts.size() != 0 && arrayShifts.size() != arrayValues.size()) {
 			throw std::invalid_argument(
 				"Number of array shifts given doesn't match with the number of array values given.");
@@ -293,12 +310,26 @@ public:
 		}
 
 		// Initialize kernels
-		auto kernelAddingArray = cl::compatibility::
-			make_kernel<cl::Buffer, cl::Buffer, unsigned int, cl::Buffer, unsigned int, unsigned int>(
-				cl::Kernel(mArithmeticProgram, "kernelAddingArray"));
+		auto kernelAddingArray =
+			cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingArray"));
 		auto kernelAddingConstant =
-			cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int, int, unsigned int>(
-				cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
+			cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   int,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
 		// auto kernelSubtractingArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
 		// 	cl::Kernel(mArithmeticProgram, "kernelSubtractingArray"));
 		// auto kernelSubtractingConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
@@ -377,8 +408,11 @@ public:
 						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
 						mBuffers[cacheChar - 'A'],
 						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex],
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
+						mArrayWidth,
+						mArrayHeight,
 						mArrayLength)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
@@ -393,8 +427,11 @@ public:
 						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
 						mBuffers[cacheChar - 'A'],
 						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex],
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
+						mArrayWidth,
+						mArrayHeight,
 						mArrayLength)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
@@ -410,9 +447,13 @@ public:
 						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
 						mBuffers[cacheChar - 'A'],
 						mBuffers[charIndex1],
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1],
+						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].first,
+						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].second,
 						mBuffers[charIndex2],
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2],
+						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
+						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
+						mArrayWidth,
+						mArrayHeight,
 						mArrayLength)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index

@@ -1,7 +1,7 @@
 #ifndef LATTICE_BOLTZMANN_METHOD_D2Q9
 #define LATTICE_BOLTZMANN_METHOD_D2Q9
 
-#include "CartesianMatrix.hpp"
+#include "Matrix.hpp"
 #include <array>
 #include <memory>
 
@@ -87,12 +87,12 @@ private:
 	Boundary     mRight;
 
 private:  // Internal data
-	bool                          mKinematicViscosityArrayRevised;
-	bool                          mDiffusionCoefficientArrayRevised;
-	std::vector<unsigned int>     mKinematicViscosityArray;
-	std::vector<unsigned int>     mDiffusionCoefficientArray;
-	CartesianMatrix<unsigned int> mDensity[MATRIX_SIZE];
-	CartesianMatrix<unsigned int> mTemperature[MATRIX_SIZE];
+	bool                      mKinematicViscosityArrayRevised;
+	bool                      mDiffusionCoefficientArrayRevised;
+	std::vector<unsigned int> mKinematicViscosityArray;
+	std::vector<unsigned int> mDiffusionCoefficientArray;
+	Matrix<unsigned int>      mDensity[MATRIX_SIZE];
+	Matrix<unsigned int>      mTemperature[MATRIX_SIZE];
 
 private:                                 // Derived data
 	std::vector<unsigned int> mOmega_m;  // density

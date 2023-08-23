@@ -11,7 +11,7 @@ set(PROJECT_SOURCES
     main.cpp
     LatticeMainWindow.h
     LatticeMainWindow.cpp
-    core/CartesianMatrix.hpp
+    core/Matrix.hpp
     core/LatticeBoltzmannMethodD2Q9.h
     core/LatticeBoltzmannMethodD2Q9.cpp
     core/OpenCLMain.hpp)

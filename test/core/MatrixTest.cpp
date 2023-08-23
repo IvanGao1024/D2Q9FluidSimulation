@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "../../src/core/CartesianMatrix.hpp"
+#include "../../src/core/Matrix.hpp"
 
-class CartesianMatrixTest : public ::testing::Test {
+class MatrixTest : public ::testing::Test {
 protected:
     void SetUp() override {
     }
@@ -11,17 +11,21 @@ protected:
     }
 };
 
-// constructor/at
-TEST_F(CartesianMatrixTest, ConstructorInitiationTest) {
-    CartesianMatrix<int> m0;
-    EXPECT_EQ(m0.getShiftIndex(), 0);
+TEST_F(MatrixTest, ConstructorInitiationTest) {
+    Matrix<int> m0;
+    EXPECT_EQ(m0.getRowShiftIndex(), 0);
+    EXPECT_EQ(m0.getColShiftIndex(), 0);
+    auto expected = std::make_pair(0u, 0u); // 'u' for unsigned int
+    auto result = m0.getShiftIndexPair();
+    EXPECT_EQ(expected, result);
     EXPECT_EQ(m0.getWidth(), 1);
     EXPECT_EQ(m0.getHeight(), 1);
     EXPECT_EQ(m0.getLength(), 1);
     EXPECT_EQ(m0.getShiftedData().at(0), 0);
     
-    CartesianMatrix<int> m1(20,20);
-    EXPECT_EQ(m1.getShiftIndex(), 0);
+    Matrix<int> m1(20,20);
+    EXPECT_EQ(m1.getRowShiftIndex(), 0);
+    EXPECT_EQ(m1.getColShiftIndex(), 0);
     EXPECT_EQ(m1.getWidth(), 20);
     EXPECT_EQ(m1.getHeight(), 20);
     EXPECT_EQ(m1.getLength(), 400);
@@ -30,8 +34,9 @@ TEST_F(CartesianMatrixTest, ConstructorInitiationTest) {
         EXPECT_EQ(m1.getShiftedData().at(i), 0);
     }
 
-    CartesianMatrix<int> m2(20,20, 0);
-    EXPECT_EQ(m2.getShiftIndex(), 0);
+    Matrix<int> m2(20,20, 0);
+    EXPECT_EQ(m2.getRowShiftIndex(), 0);
+    EXPECT_EQ(m2.getColShiftIndex(), 0);
     EXPECT_EQ(m2.getWidth(), 20);
     EXPECT_EQ(m2.getHeight(), 20);
     EXPECT_EQ(m2.getLength(), 400);
@@ -40,8 +45,9 @@ TEST_F(CartesianMatrixTest, ConstructorInitiationTest) {
         EXPECT_EQ(m2.getShiftedData().at(i), 0);
     }
 
-    CartesianMatrix<int> m3(20,20, 1);
-    EXPECT_EQ(m3.getShiftIndex(), 0);
+    Matrix<int> m3(20,20, 1);
+    EXPECT_EQ(m3.getRowShiftIndex(), 0);
+    EXPECT_EQ(m3.getColShiftIndex(), 0);
     EXPECT_EQ(m3.getWidth(), 20);
     EXPECT_EQ(m3.getHeight(), 20);
     EXPECT_EQ(m3.getLength(), 400);
@@ -50,45 +56,67 @@ TEST_F(CartesianMatrixTest, ConstructorInitiationTest) {
         EXPECT_EQ(m3.getShiftedData().at(i), 1);
     }
 
-    EXPECT_THROW(CartesianMatrix<int> m4(3, 4, std::vector<int>{}), std::invalid_argument);    
+    EXPECT_THROW(Matrix<int> m4(3, 4, std::vector<int>{}), std::invalid_argument);    
 
-    CartesianMatrix<int> matrix1(3, 3, {1,2,3,3,2,1,1,2,3});
-    CartesianMatrix<int> matrix2(3, 3, {4,5,6,6,5,4,4,6,5});
-    CartesianMatrix<int> matrix3(3, 3, {28, 33, 29, 28, 31, 31, 28, 33, 29});
-    CartesianMatrix<int> matrix4(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
+    Matrix<int> matrix1(3, 3, {1,2,3,3,2,1,1,2,3});
+    // matrix1.print();
+    Matrix<int> matrix2(3, 3, {4,5,6,6,5,4,4,6,5});
+    // matrix2.print();
+    Matrix<int> matrix3(3, 3, {28, 33, 29, 28, 31, 31, 28, 33, 29});
+    // matrix3.print();
+    Matrix<int> matrix4(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
+    // matrix4.print();
 }
 
-TEST_F(CartesianMatrixTest, RowShiftUp) {
-    CartesianMatrix<int> m0(3, 3, {0, 0, 0, 0, 0, 0, 1, 1, 1});
-    CartesianMatrix<int> m1(3, 3, {0, 0, 0, 0, 0, 0, 1, 1, 1});
-    CartesianMatrix<int> m2(3, 3, {0, 0, 0, 1, 1, 1, 0, 0, 0});
-    CartesianMatrix<int> m3(3, 3, {1, 1, 1, 0, 0, 0, 0, 0, 0});
-    EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
-    m0.shiftUp();
-    EXPECT_EQ(m0.getShiftedData(), m2.getShiftedData());
-    m0.shiftUp();
-    EXPECT_EQ(m0.getShiftedData(), m3.getShiftedData());
-    m0.shiftUp();
-    EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
+TEST_F(MatrixTest, Shift) {
+    Matrix<int> m0(3, 3, {0, 0, 0, 0, 1, 0, 0, 0, 0});
+    Matrix<int> m1(3, 3, {0, 0, 0, 0, 0, 1, 0, 0, 0});
+    Matrix<int> m2(3, 3, {0, 1, 0, 0, 0, 0, 0, 0, 0});
+    Matrix<int> m3(3, 3, {0, 0, 0, 1, 0, 0, 0, 0, 0});
+    Matrix<int> m4(3, 3, {0, 0, 0, 0, 0, 0, 0, 1, 0});
+    Matrix<int> m5(3, 3, {0, 0, 1, 0, 0, 0, 0, 0, 0});
+    Matrix<int> m6(3, 3, {1, 0, 0, 0, 0, 0, 0, 0, 0});
+    Matrix<int> m7(3, 3, {0, 0, 0, 0, 0, 0, 1, 0, 0});
+    Matrix<int> m8(3, 3, {0, 0, 0, 0, 0, 0, 0, 0, 1});
+    EXPECT_EQ(m0.getShiftedData(1, 0), m1.getShiftedData());
+    EXPECT_EQ(m0.getShiftedData(0, 1), m2.getShiftedData());
+    EXPECT_EQ(m0.getShiftedData(-1, 0), m3.getShiftedData());
+    EXPECT_EQ(m0.getShiftedData(0, -1), m4.getShiftedData());
+    EXPECT_EQ(m0.getShiftedData(1, 1), m5.getShiftedData());
+    EXPECT_EQ(m0.getShiftedData(-1, 1), m6.getShiftedData());
+    EXPECT_EQ(m0.getShiftedData(-1, -1), m7.getShiftedData());
+    EXPECT_EQ(m0.getShiftedData(1, -1), m8.getShiftedData());
+    m0.shift(1, 0);
+    EXPECT_EQ(m0.getColShiftIndex(), 1);
+    m0.shift(1, 0);
+    EXPECT_EQ(m0.getColShiftIndex(), 2);
+    m0.shift(1, 0);
+    EXPECT_EQ(m0.getColShiftIndex(), 0);
+    m0.shift(0, 1);
+    EXPECT_EQ(m0.getRowShiftIndex(), 1);
+    m0.shift(0, 1);
+    EXPECT_EQ(m0.getRowShiftIndex(), 2);
+    m0.shift(0, 1);
+    EXPECT_EQ(m0.getRowShiftIndex(), 0);
 }
 
-TEST_F(CartesianMatrixTest, Fill) {
-    CartesianMatrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
-    CartesianMatrix<int> m1(3, 3);
+TEST_F(MatrixTest, Fill) {
+    Matrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
+    Matrix<int> m1(3, 3);
     m0.fill(0);
     EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
 }
 
-TEST_F(CartesianMatrixTest, RowRevision) {
-    CartesianMatrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
-    CartesianMatrix<int> m1(3, 3, {0, 0, 0, 25, 30, 35, 27, 30, 33});
+TEST_F(MatrixTest, RowRevision) {
+    Matrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
+    Matrix<int> m1(3, 3, {0, 0, 0, 25, 30, 35, 27, 30, 33});
     m0.rowRevision(0, 0);
     EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
 }
 
-TEST_F(CartesianMatrixTest, ColRevision) {
-    CartesianMatrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
-    CartesianMatrix<int> m1(3, 3, {0, 30, 35, 0, 30, 35, 0, 30, 33});
+TEST_F(MatrixTest, ColRevision) {
+    Matrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
+    Matrix<int> m1(3, 3, {0, 30, 35, 0, 30, 35, 0, 30, 33});
     m0.colRevision(0, 0);
     EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
 }
@@ -100,7 +128,7 @@ TEST_F(CartesianMatrixTest, ColRevision) {
 //         {7, 8, 9}
 //     };
 
-//     EXPECT_THROW(CartesianMatrix<int>(4, 3, values), std::out_of_range);
+//     EXPECT_THROW(Matrix<int>(4, 3, values), std::out_of_range);
 // }
 
 // TEST_F(CartesianMatrixTest, MismatchedColumnCount) {
@@ -110,25 +138,25 @@ TEST_F(CartesianMatrixTest, ColRevision) {
 //         {7, 8, 9}
 //     };
 
-//     EXPECT_THROW(CartesianMatrix<int>(3, 3, values), std::out_of_range);
+//     EXPECT_THROW(Matrix<int>(3, 3, values), std::out_of_range);
 // }
 
 // // ==/at/[]/exception
 // TEST_F(CartesianMatrixTest, OperatorEqualsTest) {
-//     CartesianMatrix<int> m1(5,5);
-//     CartesianMatrix<int> m2(5,5);
-//     CartesianMatrix<int> m3(6,6);
-//     CartesianMatrix<int> m4(5,6);
+//     Matrix<int> m1(5,5);
+//     Matrix<int> m2(5,5);
+//     Matrix<int> m3(6,6);
+//     Matrix<int> m4(5,6);
 //     // ==
 //     EXPECT_TRUE(m1 == m2);
 //     EXPECT_EQ(m1, m2);
 // }
 
 // TEST_F(CartesianMatrixTest, OperatorExceptionTest){
-//     CartesianMatrix<int> m1(5,5);
-//     CartesianMatrix<int> m2(5,5);
-//     CartesianMatrix<int> m3(6,6);
-//     CartesianMatrix<int> m4(5,6);
+//     Matrix<int> m1(5,5);
+//     Matrix<int> m2(5,5);
+//     Matrix<int> m3(6,6);
+//     Matrix<int> m4(5,6);
 
 //     // exception
 //     EXPECT_THROW(m1.at({5,5}), std::out_of_range);
@@ -152,11 +180,11 @@ TEST_F(CartesianMatrixTest, ColRevision) {
 // }
 
 // TEST_F(CartesianMatrixTest, OperatorElementWiseTest){
-//     CartesianMatrix<int> m1(5,5);
-//     CartesianMatrix<int> m2(5,5);
-//     CartesianMatrix<int> m3(5,5);
-//     CartesianMatrix<int> m4(5,5);
-//     CartesianMatrix<int> m5(5,6);
+//     Matrix<int> m1(5,5);
+//     Matrix<int> m2(5,5);
+//     Matrix<int> m3(5,5);
+//     Matrix<int> m4(5,5);
+//     Matrix<int> m5(5,6);
 
 //     // * and +
 //     m1.batchRevisionX(1, 5);
@@ -174,19 +202,19 @@ TEST_F(CartesianMatrixTest, ColRevision) {
 // }
 
 // TEST_F(CartesianMatrixTest, OperatorMatrixMultiplicationTest){
-//     CartesianMatrix<int> matrix1(3, 3, {{1,2,3},{3,2,1},{1,2,3}});
-//     CartesianMatrix<int> matrix2(3, 3, {{4,5,6},{6,5,4},{4,6,5}});
-//     CartesianMatrix<int> matrix3(3, 3, {{28, 33, 29}, {28, 31, 31}, {28, 33, 29}});
-//     CartesianMatrix<int> matrix4(3, 3, {{25, 30, 35}, {25, 30, 35}, {27, 30, 33}});
+//     Matrix<int> matrix1(3, 3, {{1,2,3},{3,2,1},{1,2,3}});
+//     Matrix<int> matrix2(3, 3, {{4,5,6},{6,5,4},{4,6,5}});
+//     Matrix<int> matrix3(3, 3, {{28, 33, 29}, {28, 31, 31}, {28, 33, 29}});
+//     Matrix<int> matrix4(3, 3, {{25, 30, 35}, {25, 30, 35}, {27, 30, 33}});
 
 //     EXPECT_EQ(matrix1*matrix2, matrix3);
 //     EXPECT_EQ(matrix2*matrix1, matrix4);
 
-//     CartesianMatrix<int> matrix5(3, 4, {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}});
-//     CartesianMatrix<int> matrix6(4, 3, {{2, 3, 4}, {5, 6, 7}, {8, 9, 10}, {11, 12, 13}});
-//     CartesianMatrix<int> matrix7(3, 3, {{80, 90, 100}, {184, 210, 236}, {288, 330, 372}});
-//     CartesianMatrix<int> matrix8(4, 4, {{53, 62, 71, 80}, {98, 116, 134, 152}, {143, 170, 197, 224}, {188, 224, 260, 296}});
-//     CartesianMatrix<int> matrix9(4, 3, {{233, 270, 307}, {464, 540, 616}, {695, 810, 925}, {926, 1080, 1234}});
+//     Matrix<int> matrix5(3, 4, {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}});
+//     Matrix<int> matrix6(4, 3, {{2, 3, 4}, {5, 6, 7}, {8, 9, 10}, {11, 12, 13}});
+//     Matrix<int> matrix7(3, 3, {{80, 90, 100}, {184, 210, 236}, {288, 330, 372}});
+//     Matrix<int> matrix8(4, 4, {{53, 62, 71, 80}, {98, 116, 134, 152}, {143, 170, 197, 224}, {188, 224, 260, 296}});
+//     Matrix<int> matrix9(4, 3, {{233, 270, 307}, {464, 540, 616}, {695, 810, 925}, {926, 1080, 1234}});
     
 
 //     EXPECT_EQ(matrix5*matrix6, matrix7);
@@ -196,7 +224,7 @@ TEST_F(CartesianMatrixTest, ColRevision) {
 // }
 
 // TEST_F(CartesianMatrixTest, BatchRevisionTest){
-//     CartesianMatrix<int> m1(5,5);
+//     Matrix<int> m1(5,5);
 //     m1.batchRevisionY(1, 5);
 //     // m1.print();
 //     m1.batchRevisionX(1, 6);
@@ -210,103 +238,103 @@ TEST_F(CartesianMatrixTest, ColRevision) {
 // }
 
 // TEST_F(CartesianMatrixTest, BaseShiftTest) {
-//     CartesianMatrix<int> m1(5,5);
+//     Matrix<int> m1(5,5);
 //     m1.batchRevisionY(0, 1);
 //     EXPECT_EQ(m1.at({0,0}), 1);
-//     m1.baseShift(CartesianMatrix<int>::Direction::UP);
+//     m1.baseShift(Matrix<int>::Direction::UP);
 //     EXPECT_EQ(m1.at({0,0}), 0);
 //     EXPECT_EQ(m1.at({0,1}), 1);
-//     m1.baseShift(CartesianMatrix<int>::Direction::UP);
+//     m1.baseShift(Matrix<int>::Direction::UP);
 //     EXPECT_EQ(m1.at({0,1}), 0);
 //     EXPECT_EQ(m1.at({0,2}), 1);
-//     m1.baseShift(CartesianMatrix<int>::Direction::UP);
+//     m1.baseShift(Matrix<int>::Direction::UP);
 //     EXPECT_EQ(m1.at({0,2}), 0);
 //     EXPECT_EQ(m1.at({0,3}), 1);
-//     m1.baseShift(CartesianMatrix<int>::Direction::UP);
+//     m1.baseShift(Matrix<int>::Direction::UP);
 //     EXPECT_EQ(m1.at({0,3}), 0);
 //     EXPECT_EQ(m1.at({0,4}), 1);
-//     m1.baseShift(CartesianMatrix<int>::Direction::UP);
+//     m1.baseShift(Matrix<int>::Direction::UP);
 //     EXPECT_EQ(m1.at({0,4}), 0);
 //     EXPECT_EQ(m1.at({0,0}), 1);
 
-//     CartesianMatrix<int> m2(5,5);
+//     Matrix<int> m2(5,5);
 //     m2.batchRevisionY(4, 1);
 //     EXPECT_EQ(m2.at({0,4}), 1);
-//     m2.baseShift(CartesianMatrix<int>::Direction::DOWN);
+//     m2.baseShift(Matrix<int>::Direction::DOWN);
 //     EXPECT_EQ(m2.at({0,4}), 0);
 //     EXPECT_EQ(m2.at({0,3}), 1);
-//     m2.baseShift(CartesianMatrix<int>::Direction::DOWN);
+//     m2.baseShift(Matrix<int>::Direction::DOWN);
 //     EXPECT_EQ(m2.at({0,3}), 0);
 //     EXPECT_EQ(m2.at({0,2}), 1);
-//     m2.baseShift(CartesianMatrix<int>::Direction::DOWN);
+//     m2.baseShift(Matrix<int>::Direction::DOWN);
 //     EXPECT_EQ(m2.at({0,2}), 0);
 //     EXPECT_EQ(m2.at({0,1}), 1);
-//     m2.baseShift(CartesianMatrix<int>::Direction::DOWN);
+//     m2.baseShift(Matrix<int>::Direction::DOWN);
 //     EXPECT_EQ(m2.at({0,1}), 0);
 //     EXPECT_EQ(m2.at({0,0}), 1);
-//     m2.baseShift(CartesianMatrix<int>::Direction::DOWN);
+//     m2.baseShift(Matrix<int>::Direction::DOWN);
 //     EXPECT_EQ(m2.at({0,0}), 0);
 //     EXPECT_EQ(m2.at({0,4}), 1);
 
-//     CartesianMatrix<int> m3(5,5);
+//     Matrix<int> m3(5,5);
 //     m3.batchRevisionX(4, 1);
 //     EXPECT_EQ(m3.at({4,0}), 1);
-//     m3.baseShift(CartesianMatrix<int>::Direction::LEFT);
+//     m3.baseShift(Matrix<int>::Direction::LEFT);
 //     EXPECT_EQ(m3.at({4,0}), 0);
 //     EXPECT_EQ(m3.at({3,0}), 1);
-//     m3.baseShift(CartesianMatrix<int>::Direction::LEFT);
+//     m3.baseShift(Matrix<int>::Direction::LEFT);
 //     EXPECT_EQ(m3.at({3,0}), 0);
 //     EXPECT_EQ(m3.at({2,0}), 1);
-//     m3.baseShift(CartesianMatrix<int>::Direction::LEFT);
+//     m3.baseShift(Matrix<int>::Direction::LEFT);
 //     EXPECT_EQ(m3.at({2,0}), 0);
 //     EXPECT_EQ(m3.at({1,0}), 1);
-//     m3.baseShift(CartesianMatrix<int>::Direction::LEFT);
+//     m3.baseShift(Matrix<int>::Direction::LEFT);
 //     EXPECT_EQ(m3.at({1,0}), 0);
 //     EXPECT_EQ(m3.at({0,0}), 1);
-//     m3.baseShift(CartesianMatrix<int>::Direction::LEFT);
+//     m3.baseShift(Matrix<int>::Direction::LEFT);
 //     EXPECT_EQ(m3.at({0,0}), 0);
 //     EXPECT_EQ(m3.at({4,0}), 1);
 
-//     CartesianMatrix<int> m4(5,5);
+//     Matrix<int> m4(5,5);
 //     m4.batchRevisionX(0, 1);
 //     EXPECT_EQ(m4.at({0,0}), 1);
-//     m4.baseShift(CartesianMatrix<int>::Direction::RIGHT);
+//     m4.baseShift(Matrix<int>::Direction::RIGHT);
 //     EXPECT_EQ(m4.at({0,0}), 0);
 //     EXPECT_EQ(m4.at({1,0}), 1);
-//     m4.baseShift(CartesianMatrix<int>::Direction::RIGHT);
+//     m4.baseShift(Matrix<int>::Direction::RIGHT);
 //     EXPECT_EQ(m4.at({1,0}), 0);
 //     EXPECT_EQ(m4.at({2,0}), 1);
-//     m4.baseShift(CartesianMatrix<int>::Direction::RIGHT);
+//     m4.baseShift(Matrix<int>::Direction::RIGHT);
 //     EXPECT_EQ(m4.at({2,0}), 0);
 //     EXPECT_EQ(m4.at({3,0}), 1);
-//     m4.baseShift(CartesianMatrix<int>::Direction::RIGHT);
+//     m4.baseShift(Matrix<int>::Direction::RIGHT);
 //     EXPECT_EQ(m4.at({3,0}), 0);
 //     EXPECT_EQ(m4.at({4,0}), 1);
-//     m4.baseShift(CartesianMatrix<int>::Direction::RIGHT);
+//     m4.baseShift(Matrix<int>::Direction::RIGHT);
 //     EXPECT_EQ(m4.at({4,0}), 0);
 //     EXPECT_EQ(m4.at({0,0}), 1);
 
 //     // Cast an out-of-range integer to Direction to force test on the default case:
-//     EXPECT_THROW(m1.getShift(static_cast<CartesianMatrix<int>::Direction>(999)), std::invalid_argument);
+//     EXPECT_THROW(m1.getShift(static_cast<Matrix<int>::Direction>(999)), std::invalid_argument);
 // }
 
 
 // TEST_F(CartesianMatrixTest, FillxxTest) {
-//     CartesianMatrix<int> m1(5,5);
+//     Matrix<int> m1(5,5);
 //     EXPECT_EQ(m1.at({0,0}), 0);
 
 //     m1.fill(2);
 //     EXPECT_EQ(m1.at({0,0}), 2);
 //     EXPECT_EQ(m1.at({4,4}), 2);
 
-//     CartesianMatrix<int> m2(5,5);
+//     Matrix<int> m2(5,5);
 //     m1.fillRandom();
 //     m2.fillRandom();
 //     EXPECT_NE(m1, m2);
 
-//     CartesianMatrix<float> m3(5,5);
+//     MatrixTest<float> m3(5,5);
 //     m3.fillRandom();
 
-//     CartesianMatrix<double> m4(5,5);
+//     MatrixTest<double> m4(5,5);
 //     m4.fillRandom();
 // }
