@@ -149,27 +149,34 @@ private:
 				B[i] = A[originalIndexA] * C;
 			}
 
-			void kernel kernelDividingByArray(global const int* A, global const int* B, global int* C) {
-				int bValue = B[get_global_id(0)];
+			void kernel kernelDividingByArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int M, const unsigned int N) {
+				unsigned int i = get_global_id(0);
+				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexB = ((i - i % M) / N + shiftBRow ) %  N * M + (i - shiftBCol) % M;
+				int bValue = B[originalIndexB];
 				if (bValue != 0) {  // Ensure don't divide by zero
-					C[get_global_id(0)] = A[get_global_id(0)] / bValue;
+					C[i] = A[originalIndexA] / bValue;
 				} else {
-					C[get_global_id(0)] = 0;
+					C[i] = 0;
 				}
 			}
-			void kernel kernelDividingByConstant(global const int* A, global int* B, const int C) {
+			void kernel kernelDividingByConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+				unsigned int i = get_global_id(0);
 				if (C != 0) {  // Ensure don't divide by zero
-					B[get_global_id(0)] = A[get_global_id(0)] / C;
+					unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+					B[i] = A[originalIndexA] / C;
 				} else {
-					B[get_global_id(0)] = 0;
+					B[i] = 0;
 				}
 			}
-			void kernel kernelConstantDividingBy(global const int* A, global int* B, const int C) {
-				int aValue = A[get_global_id(0)];
+			void kernel kernelConstantDividingBy(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+				unsigned int i = get_global_id(0);
+				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				int aValue = A[originalIndexA];
 				if (aValue != 0) {  // Ensure don't divide by zero
-					B[get_global_id(0)] = C / aValue;
+					B[i] = C / aValue;
 				} else {
-					B[get_global_id(0)] = 0;
+					B[i] = 0;
 				}
 			}
 		)";
@@ -378,12 +385,32 @@ public:
 										   unsigned int,
 										   unsigned int>(
 			cl::Kernel(mArithmeticProgram, "kernelMultiplicatingConstant"));
-		// auto kernelDividingByArray = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, cl::Buffer>(
-		// 	cl::Kernel(mArithmeticProgram, "kernelDividingByArray"));
-		// auto kernelDividingByConstant = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
-		// 	cl::Kernel(mArithmeticProgram, "kernelDividingByConstant"));
-		// auto kernelConstantDividingBy = cl::compatibility::make_kernel<cl::Buffer, cl::Buffer, unsigned int>(
-		// 	cl::Kernel(mArithmeticProgram, "kernelConstantDividingBy"));
+		auto kernelDividingByArray = cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelDividingByArray"));
+		auto kernelDividingByConstant = cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   int,
+										   unsigned int,
+										   unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelDividingByConstant"));
+		auto kernelConstantDividingBy = cl::compatibility::make_kernel<cl::Buffer,
+										   cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   int,
+										   unsigned int,
+										   unsigned int>(
+			cl::Kernel(mArithmeticProgram, "kernelConstantDividingBy"));
 
 		// Initialize parameter
 		mQueue  = cl::CommandQueue(mContext, mDevice);
@@ -654,61 +681,82 @@ public:
 					evalStack.push(cacheChar);
 				}
 			}
-			// else if(token == "/") {
-			// 	std::variant<int, char> second = evalStack.top();
-			// 	evalStack.pop();
-			// 	std::variant<int, char> first = evalStack.top();
-			// 	evalStack.pop();
-			// 	// std::visit([&first, &second](auto firstValue) {
-			// 	// 	std::visit([&firstValue, &second](auto secondValue) {
-			// 	// 		std::cout << "Caculate " << firstValue << " / " << secondValue << "\n";
-			// 	// 	}, second);
-			// 	// }, first);
+			else if(token == "/") {
+				std::variant<int, char> second = evalStack.top();
+				evalStack.pop();
+				std::variant<int, char> first = evalStack.top();
+				evalStack.pop();
+				// std::visit([&first, &second](auto firstValue) {
+				// 	std::visit([&firstValue, &second](auto secondValue) {
+				// 		std::cout << "Caculate " << firstValue << " / " << secondValue << "\n";
+				// 	}, second);
+				// }, first);
 
-			// 	if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
-			// 		evalStack.push(std::get<int>(first) / std::get<int>(second));
-			// 	} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
-			// 		char index = getCacheIndex<T>();
-			// 		kernelDividingByConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-			// 								 mBuffers[std::get<char>(first) - 'A'],
-			// 								 mBuffers[index - 'A'],
-			// 								 std::get<int>(second))
-			// 			.wait();
-			// 		if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(first));
-			// 		}
-			// 		evalStack.push(index);
-			// 	} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
-			// 		char index = getCacheIndex<T>();
-			// 		kernelConstantDividingBy(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-			// 								 mBuffers[std::get<char>(second) - 'A'],
-			// 								 mBuffers[index - 'A'],
-			// 								 std::get<int>(first))
-			// 			.wait();
-			// 		if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(second));
-			// 		}
-			// 		evalStack.push(index);
-			// 	} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
-			// 		char index = getCacheIndex<T>();
-			// 		kernelDividingByArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-			// 							  mBuffers[std::get<char>(first) - 'A'],
-			// 							  mBuffers[std::get<char>(second) - 'A'],
-			// 							  mBuffers[index - 'A'])
-			// 			.wait();
-			// 		if(std::get<char>(first) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(first));
-			// 		}
-			// 		if(std::get<char>(second) >= arrayValues.size() + 'A')  // meaning is a cache index
-			// 		{
-			// 			mAvailableCacheIndex.insert(std::get<char>(second));
-			// 		}
-			// 		evalStack.push(index);
-			// 	}
-			// }
+				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
+					evalStack.push(std::get<int>(first) / std::get<int>(second));
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
+					char         cacheChar = getCacheIndex<T>();
+					unsigned int charIndex = std::get<char>(first) - 'A';
+					kernelDividingByConstant(
+						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+						mBuffers[cacheChar - 'A'],
+						mBuffers[charIndex],
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
+						std::get<int>(second),
+						mArrayWidth,
+						mArrayHeight)
+						.wait();
+					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(first));
+					}
+					evalStack.push(cacheChar);
+				} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar = getCacheIndex<T>();
+					unsigned int charIndex = std::get<char>(second) - 'A';
+					kernelConstantDividingBy(
+						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+						mBuffers[cacheChar - 'A'],
+						mBuffers[charIndex],
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
+						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
+						std::get<int>(first),
+						mArrayWidth,
+						mArrayHeight)
+						.wait();
+					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(second));
+					}
+					evalStack.push(cacheChar);
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar  = getCacheIndex<T>();
+					unsigned int charIndex1 = std::get<char>(first) - 'A';
+					unsigned int charIndex2 = std::get<char>(second) - 'A';
+					kernelDividingByArray(
+						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+						mBuffers[cacheChar - 'A'],
+						mBuffers[charIndex1],
+						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].first,
+						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].second,
+						mBuffers[charIndex2],
+						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
+						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
+						mArrayWidth,
+						mArrayHeight)
+						.wait();
+					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(first));
+					}
+					if(charIndex2 >= arrayValues.size())  // meaning is a cache index
+					{
+						mAvailableCacheIndex.insert(std::get<char>(second));
+					}
+					evalStack.push(cacheChar);
+				}
+			}
 			else {
 				std::cout << "unknown token :" << token << std::endl;
 			}

@@ -301,39 +301,91 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_MultiplicationShiftCase) {
     EXPECT_EQ(result, result5.getShiftedData());
 }
 
-// TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_DivideByBaseCase) {
-//     Matrix<int> m1(8, 8, 1);
-//     Matrix<int> m2(8, 8, 2);
-//     Matrix<int> m3(8, 8, 3);
-//     Matrix<int> m4(8, 8, 4);
-//     Matrix<int> m5(8, 8, 5);
-//     std::vector<int> result;
+TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_DivideByBaseCase) {
+    Matrix<int> result1(8, 8, 0);
+    Matrix<int> result2(8, 8, 2);
+    Matrix<int> result3(8, 8, 10244);
+    Matrix<int> result4(8, 8, 5122);
+    Matrix<int> result5(8, 8, 5115);
+    Matrix<int> result6(8, 8, 1707);
 
-//     result = OpenCLMain::instance().evaluateArithmeticFormula<int>("8 / 1");
-//     EXPECT_EQ(result[0], 8);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula<int>("110 / 11");
-//     EXPECT_EQ(result[0], 10);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("A / 10", 64, std::vector<int*>{m1.getDataData()});
-//     EXPECT_EQ(result[0], 0); // integer division: 1/10 = 0
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("A / B", 64, std::vector<int*>{m1.getDataData(), m2.getDataData()});
-//     EXPECT_EQ(result[0], 0);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula<int>("(7-8) / 1");
-//     EXPECT_EQ(result[0], -1);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("A / (10 * A)", 64, std::vector<int*>{m1.getDataData()});
-//     EXPECT_EQ(result[0], 0);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("10244 / A", 64, std::vector<int*>{m1.getDataData()});
-//     EXPECT_EQ(result[0], 10244);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("10244 / (A * B)", 64, std::vector<int*>{m1.getDataData(), m2.getDataData()});
-//     EXPECT_EQ(result[0], 5122);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("(10244 - 13) / (A * B)", 64, std::vector<int*>{m1.getDataData(), m2.getDataData()});
-//     EXPECT_EQ(result[0], 5115);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("(10244 - A) / (B * C)", 64, std::vector<int*>{m1.getDataData(), m2.getDataData(), m3.getDataData()});
-//     EXPECT_EQ(result[0], 1707);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("A / (2032 * B)", 64, std::vector<int*>{m1.getDataData(), m2.getDataData()});
-//     EXPECT_EQ(result[0], 0);
-//     result = OpenCLMain::instance().evaluateArithmeticFormula("0 / (10244 + A * B - C - D)", 64, std::vector<int*>{m1.getDataData(), m2.getDataData(), m3.getDataData(), m4.getDataData()});
-//     EXPECT_EQ(result[0], 0);
-// }
+    std::vector<int> result;
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("8 / 1");
+    EXPECT_EQ(result[0], 8);
+    EXPECT_EQ(result.size(), 1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("110 / 11");
+    EXPECT_EQ(result[0], 10);
+    EXPECT_EQ(result.size(), 1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / 10", 8, 8, std::vector<int*>{m1.getDataData()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / B", 8, 8, std::vector<int*>{m1.getDataData(), m2.getDataData()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / B", 8, 8, std::vector<int*>{m2.getDataData(), m1.getDataData()});
+    EXPECT_EQ(result, result2.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("(7-8) / 1");
+    EXPECT_EQ(result[0], -1);
+    EXPECT_EQ(result.size(), 1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / (10 * A)", 8, 8, std::vector<int*>{m1.getDataData()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("10244 / A", 8, 8, std::vector<int*>{m1.getDataData()});
+    EXPECT_EQ(result, result3.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("10244 / (A * B)", 8, 8, std::vector<int*>{m1.getDataData(), m2.getDataData()});
+    EXPECT_EQ(result, result4.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("(10244 - 13) / (A * B)", 8, 8, std::vector<int*>{m1.getDataData(), m2.getDataData()});
+    EXPECT_EQ(result, result5.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("(10244 - A) / (B * C)", 8, 8, std::vector<int*>{m1.getDataData(), m2.getDataData(), m3.getDataData()});
+    EXPECT_EQ(result, result6.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / (2032 * B)", 8, 8, std::vector<int*>{m1.getDataData(), m2.getDataData()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("0 / (10244 + A * B - C - D)", 8, 8, std::vector<int*>{m1.getDataData(), m2.getDataData(), m3.getDataData(), m4.getDataData()});
+    EXPECT_EQ(result, result1.getShiftedData());
+}
+
+TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_DivisionShiftCase) {
+    Matrix<int> result1(8, 8, 0);
+    Matrix<int> result2(8, 8, 0);
+    result2.indexRevision(0, 0, 2);
+    Matrix<int> result3(8, 8, 0);
+    result3.indexRevision(0, 0, 3414);
+    Matrix<int> result4(8, 8, 0);
+    result4.indexRevision(0, 0, 853);
+    Matrix<int> result5(8, 8, 0);
+    result5.indexRevision(0, 0, 852);
+    Matrix<int> result6(8, 8, 0);
+    result6.indexRevision(0, 0, 512);
+
+    std::vector<int> result;
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("8 / 1");
+    EXPECT_EQ(result[0], 8);
+    EXPECT_EQ(result.size(), 1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("110 / 11");
+    EXPECT_EQ(result[0], 10);
+    EXPECT_EQ(result.size(), 1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / 10", 8, 8, std::vector<int*>{ matrix1.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix1.getShiftIndexPair()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / B", 8, 8, std::vector<int*>{ matrix1.getDataData(), matrix2.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix1.getShiftIndexPair(), matrix2.getShiftIndexPair()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / B", 8, 8, std::vector<int*>{matrix2.getDataData(),  matrix1.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix2.getShiftIndexPair(), matrix1.getShiftIndexPair()});
+    EXPECT_EQ(result, result2.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula<int>("(7-8) / 1");
+    EXPECT_EQ(result[0], -1);
+    EXPECT_EQ(result.size(), 1);
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / (10 * A)", 8, 8, std::vector<int*>{matrix3.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix3.getShiftIndexPair()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("10244 / A", 8, 8, std::vector<int*>{matrix3.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix3.getShiftIndexPair()});
+    EXPECT_EQ(result, result3.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("10244 / (A * B)", 8, 8, std::vector<int*>{matrix3.getDataData(), matrix4.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix3.getShiftIndexPair(), matrix4.getShiftIndexPair()});
+    EXPECT_EQ(result, result4.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("(10244 - 13) / (A * B)", 8, 8, std::vector<int*>{matrix3.getDataData(), matrix4.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix3.getShiftIndexPair(), matrix4.getShiftIndexPair()});
+    EXPECT_EQ(result, result5.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("(10244 - A) / (B * C)", 8, 8, std::vector<int*>{matrix3.getDataData(), matrix4.getDataData(), matrix5.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix3.getShiftIndexPair(), matrix4.getShiftIndexPair(), matrix5.getShiftIndexPair()});
+    EXPECT_EQ(result, result6.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("A / (2032 * B)", 8, 8, std::vector<int*>{matrix4.getDataData(), matrix5.getDataData()}, std::vector<std::pair<unsigned int, unsigned int>>{matrix4.getShiftIndexPair(), matrix5.getShiftIndexPair()});
+    EXPECT_EQ(result, result1.getShiftedData());
+    result = OpenCLMain::instance().evaluateArithmeticFormula("0 / (10244 + A * B - C - D)", 8, 8, std::vector<int*>{matrix5.getDataData(), matrix6.getDataData(), matrix7.getDataData(), matrix8.getDataData()},
+        std::vector<std::pair<unsigned int, unsigned int>>{matrix5.getShiftIndexPair(), matrix6.getShiftIndexPair(), matrix7.getShiftIndexPair(), matrix8.getShiftIndexPair()});
+    EXPECT_EQ(result, result1.getShiftedData());
+}
 
 // TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedCase) {
 //     Matrix<int> m1(8, 8, 1);
@@ -345,28 +397,28 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_MultiplicationShiftCase) {
 
 //     result = OpenCLMain::instance().evaluateArithmeticFormula(
 //         "A + A + A",
-//         64,
+//         8, 8,
 //         std::vector<int*>{m5.getDataData()});
-//     EXPECT_EQ(result[0], 15);
+//     EXPECT_EQ(result , 15);
 //     result = OpenCLMain::instance().evaluateArithmeticFormula(
 //         "A - A - A",
-//         64,
+//         8, 8,
 //         std::vector<int*>{m5.getDataData()});
-//     EXPECT_EQ(result[0], -5);
+//     EXPECT_EQ(result , -5);
 //     result = OpenCLMain::instance().evaluateArithmeticFormula(
 //         "A * A * A",
-//         64,
+//         8, 8,
 //         std::vector<int*>{m5.getDataData()});
-//     EXPECT_EQ(result[0], 125);
+//     EXPECT_EQ(result , 125);
 //     result = OpenCLMain::instance().evaluateArithmeticFormula(
 //         "A / A",
-//         64,
+//         8, 8,
 //         std::vector<int*>{m5.getDataData()});
-//     EXPECT_EQ(result[0], 1);
+//     EXPECT_EQ(result , 1);
 
 //     result = OpenCLMain::instance().evaluateArithmeticFormula(
 //         "3 + A * (B - 4 / 2) + (C / 3) * (7 - D) + (D + 3) / E - 9",
-//         64,
+//         8, 8,
 //         std::vector<int*>{m1.getDataData(), m2.getDataData(), m3.getDataData(), m4.getDataData(), m5.getDataData()});
-//     EXPECT_EQ(result[0], -2);
+//     EXPECT_EQ(result , -2);
 // }
