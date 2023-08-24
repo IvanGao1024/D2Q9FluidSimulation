@@ -239,7 +239,7 @@ public:
 	{
 		std::cout << "---------------------- " << M << "x" << N << " ----------------------\n";
 
-		std::vector<T> newVector = getShiftedData(); // Make sure to specify the type of the elements in newVector
+		std::vector<T> newVector = getShiftedData();  // Make sure to specify the type of the elements in newVector
 
 		// Initialize variables to keep track of rows and columns
 		int row = 0, col = 0;
@@ -253,10 +253,10 @@ public:
 
 			// Check if the end of a row has been reached
 			if(col == M) {
-				std::cout << "\n"; // New line at the end of a row
+				std::cout << "\n";  // New line at the end of a row
 				col = 0;            // Reset the column counter
 			} else {
-				std::cout << " | "; // Separator between columns
+				std::cout << " | ";  // Separator between columns
 			}
 		}
 	}

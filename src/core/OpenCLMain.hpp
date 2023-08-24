@@ -333,15 +333,27 @@ public:
 										   unsigned int,
 										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingArray"));
-		auto kernelAddingConstant =
+		auto kernelAddingConstant = cl::compatibility::
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+				cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
+		auto kernelSubtractingArray =
 			cl::compatibility::make_kernel<cl::Buffer,
 										   cl::Buffer,
 										   unsigned int,
 										   unsigned int,
-										   int,
+										   cl::Buffer,
 										   unsigned int,
-										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
-		auto kernelSubtractingArray = cl::compatibility::make_kernel<cl::Buffer,
+										   unsigned int,
+										   unsigned int,
+										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelSubtractingArray"));
+		auto kernelSubtractingConstant = cl::compatibility::
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+				cl::Kernel(mArithmeticProgram, "kernelSubtractingConstant"));
+		auto kernelConstantSubtracting = cl::compatibility::
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+				cl::Kernel(mArithmeticProgram, "kernelConstantSubtracting"));
+		auto kernelMultiplicatingArray =
+			cl::compatibility::make_kernel<cl::Buffer,
 										   cl::Buffer,
 										   unsigned int,
 										   unsigned int,
@@ -349,25 +361,12 @@ public:
 										   unsigned int,
 										   unsigned int,
 										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelSubtractingArray"));
-		auto kernelSubtractingConstant = cl::compatibility::make_kernel<cl::Buffer,
-										   cl::Buffer,
-										   unsigned int,
-										   unsigned int,
-										   int,
-										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelSubtractingConstant"));
-		auto kernelConstantSubtracting = cl::compatibility::make_kernel<cl::Buffer,
-										   cl::Buffer,
-										   unsigned int,
-										   unsigned int,
-										   int,
-										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelConstantSubtracting"));
-		auto kernelMultiplicatingArray = cl::compatibility::make_kernel<cl::Buffer,
+										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelMultiplicatingArray"));
+		auto kernelMultiplicatingConstant = cl::compatibility::
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+				cl::Kernel(mArithmeticProgram, "kernelMultiplicatingConstant"));
+		auto kernelDividingByArray =
+			cl::compatibility::make_kernel<cl::Buffer,
 										   cl::Buffer,
 										   unsigned int,
 										   unsigned int,
@@ -375,42 +374,13 @@ public:
 										   unsigned int,
 										   unsigned int,
 										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelMultiplicatingArray"));
-		auto kernelMultiplicatingConstant = cl::compatibility::make_kernel<cl::Buffer,
-										   cl::Buffer,
-										   unsigned int,
-										   unsigned int,
-										   int,
-										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelMultiplicatingConstant"));
-		auto kernelDividingByArray = cl::compatibility::make_kernel<cl::Buffer,
-										   cl::Buffer,
-										   unsigned int,
-										   unsigned int,
-										   cl::Buffer,
-										   unsigned int,
-										   unsigned int,
-										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelDividingByArray"));
-		auto kernelDividingByConstant = cl::compatibility::make_kernel<cl::Buffer,
-										   cl::Buffer,
-										   unsigned int,
-										   unsigned int,
-										   int,
-										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelDividingByConstant"));
-		auto kernelConstantDividingBy = cl::compatibility::make_kernel<cl::Buffer,
-										   cl::Buffer,
-										   unsigned int,
-										   unsigned int,
-										   int,
-										   unsigned int,
-										   unsigned int>(
-			cl::Kernel(mArithmeticProgram, "kernelConstantDividingBy"));
+										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelDividingByArray"));
+		auto kernelDividingByConstant = cl::compatibility::
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+				cl::Kernel(mArithmeticProgram, "kernelDividingByConstant"));
+		auto kernelConstantDividingBy = cl::compatibility::
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+				cl::Kernel(mArithmeticProgram, "kernelConstantDividingBy"));
 
 		// Initialize parameter
 		mQueue  = cl::CommandQueue(mContext, mDevice);
@@ -528,8 +498,7 @@ public:
 					}
 					evalStack.push(cacheChar);
 				}
-			}
-			else if(token == "-") {
+			} else if(token == "-") {
 				std::variant<int, char> second = evalStack.top();
 				evalStack.pop();
 				std::variant<int, char> first = evalStack.top();
@@ -604,8 +573,7 @@ public:
 					}
 					evalStack.push(cacheChar);
 				}
-			}
-			 else if(token == "*") {
+			} else if(token == "*") {
 				std::variant<int, char> second = evalStack.top();
 				evalStack.pop();
 				std::variant<int, char> first = evalStack.top();
@@ -680,8 +648,7 @@ public:
 					}
 					evalStack.push(cacheChar);
 				}
-			}
-			else if(token == "/") {
+			} else if(token == "/") {
 				std::variant<int, char> second = evalStack.top();
 				evalStack.pop();
 				std::variant<int, char> first = evalStack.top();
@@ -756,8 +723,7 @@ public:
 					}
 					evalStack.push(cacheChar);
 				}
-			}
-			else {
+			} else {
 				std::cout << "unknown token :" << token << std::endl;
 			}
 
