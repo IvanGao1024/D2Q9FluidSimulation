@@ -17,8 +17,8 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int             
 													   std::vector<unsigned int> kinematicViscosityArray,
 													   std::vector<unsigned int> diffusionCoefficientArray)
 {
-	mHeight = height;
-	mWidth  = width;
+	mHeight = height + 1;
+	mWidth  = width + 1;
 	mLength = mHeight * mWidth;
 	mTop    = top;
 	mBottom = bottom;
@@ -118,6 +118,12 @@ void LatticeBoltzmannMethodD2Q9::step(bool saveImage)
 	collision();
 	streaming();
 	if(saveImage) {
+		buildResultingDensityMatrix();
+		buildResultingTemperatureMatrix();
+		Matrix<unsigned int> result1(mHeight, mWidth, mResultingDensityArray);
+		Matrix<unsigned int> result2(mHeight, mWidth, mResultingTemperatureArray);
+		result1.print();
+		result2.print();
 		// TODO: verify heat map works
 		// HeatMap::createHeatMap(mResultingDensityMatrix, "density");
 		// HeatMap::createHeatMap(mResultingTemperatureMatrix, "temperature");
@@ -344,7 +350,27 @@ void LatticeBoltzmannMethodD2Q9::collision()
 
 void LatticeBoltzmannMethodD2Q9::streaming()
 {
-	// TODO
+	mDensity[0].shift(0, 0);
+	mDensity[1].shift(1, 0);
+	mDensity[2].shift(0, 1);
+	mDensity[3].shift(-1, 0);
+	mDensity[4].shift(0, -1);
+	mDensity[5].shift(1, 1);
+	mDensity[6].shift(-1, 1);
+	mDensity[7].shift(-1, -1);
+	mDensity[8].shift(1, -1);
+
+	mTemperature[0].shift(0, 0);
+	mTemperature[1].shift(1, 0);
+	mTemperature[2].shift(0, 1);
+	mTemperature[3].shift(-1, 0);
+	mTemperature[4].shift(0, -1);
+	mTemperature[5].shift(1, 1);
+	mTemperature[6].shift(-1, 1);
+	mTemperature[7].shift(-1, -1);
+	mTemperature[8].shift(1, -1);
+
+	// TODO: boundary update
 }
 
 void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()
@@ -362,7 +388,6 @@ void LatticeBoltzmannMethodD2Q9::buildResultingDensityMatrix()
 		"A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3",
 		mWidth,
 		mHeight,
-
 		std::vector<unsigned int*>{mDensity[0].getDataData(),
 								   mDensity[1].getDataData(),
 								   mDensity[2].getDataData(),
@@ -380,7 +405,6 @@ void LatticeBoltzmannMethodD2Q9::buildResultingTemperatureMatrix()
 		"A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3",
 		mWidth,
 		mHeight,
-
 		std::vector<unsigned int*>{mTemperature[0].getDataData(),
 								   mTemperature[1].getDataData(),
 								   mTemperature[2].getDataData(),

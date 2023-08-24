@@ -14,7 +14,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 ## Executable Test
 add_executable(MainTests
     core/MatrixTest.cpp
-    # core/LatticeBoltzmannMethodD2Q9Test.cpp
+    core/LatticeBoltzmannMethodD2Q9Test.cpp
     core/OpenCLMainTest.cpp
     )
 target_link_libraries(MainTests GTest::gtest_main)
