@@ -5,8 +5,6 @@
 #include <iostream>
 #include <omp.h>
 
-#include "OpenCLMain.hpp"
-
 /**
  * @brief The matrix class with n(Row) x m(Col) dimension.
  *
@@ -37,13 +35,15 @@ public:
 	 */
 	Matrix(const unsigned int nRow         = MATRIX_DEFAULT_HEIGHT,
 		   const unsigned int nColumn      = MATRIX_DEFAULT_WIDTH,
-		   const T            initialValue = T()):
+		   const T            initialValue = T(),
+		   const unsigned int rowShiftIndex = 0,
+		   const unsigned int colShiftIndex = 0):
 		N(nRow),
 		M(nColumn),
 		LENGTH(nRow * nColumn)
 	{
-		mRowShiftIndex = 0;
-		mColShiftIndex = 0;
+		mRowShiftIndex = rowShiftIndex;
+		mColShiftIndex = colShiftIndex;
 		mData.resize(LENGTH, initialValue);
 	}
 
@@ -58,7 +58,9 @@ public:
 	Matrix(const unsigned int   nRow,
 		   const unsigned int   nColumn,
 		   const std::vector<T> values,
-		   const unsigned int   magnification = 1):
+		   const unsigned int magnification = 1,
+		   const unsigned int rowShiftIndex = 0,
+		   const unsigned int colShiftIndex = 0):
 		N(nRow),
 		M(nColumn),
 		LENGTH(nRow * nColumn)
@@ -69,8 +71,8 @@ public:
 			throw std::invalid_argument(errMsg);
 		}
 
-		mRowShiftIndex = 0;
-		mColShiftIndex = 0;
+		mRowShiftIndex = rowShiftIndex;
+		mColShiftIndex = colShiftIndex;
 		mData.resize(LENGTH);
 #pragma omp parallel for
 		for(size_t i = 0; i < values.size(); i++) {
@@ -111,12 +113,12 @@ public:
 	}
 
 public:  // Helper getter
-	unsigned int getWidth() const
+	unsigned int getM() const
 	{
 		return M;
 	}
 
-	unsigned int getHeight() const
+	unsigned int getN() const
 	{
 		return N;
 	}
@@ -146,10 +148,12 @@ public:  // Helper getter
 		return mData.data();
 	}
 
-	// T getData(const unsigned int nRow, const unsigned int nCol)
-	// {
-	// 	return mData.at(((nRow * N) + (nCol + mColShiftIndex + M) % M - mRowShiftIndex * N + LENGTH) % LENGTH);
-	// }
+	void resetData(std::vector<T> data)
+	{
+		mData          = data;
+		mRowShiftIndex = 0;
+		mColShiftIndex = 0;
+	}
 
 	std::vector<T> getShiftedData(int x = 0, int y = 0) const
 	{
@@ -159,11 +163,9 @@ public:  // Helper getter
 		int combinedRowShiftIndex = (mRowShiftIndex + y + N) % N;
 		int combinedColShiftIndex = (mColShiftIndex + x + M) % M;
 
-		// #pragma omp parallel for
+#pragma omp parallel for
 		for(size_t i = 0; i < LENGTH; ++i) {
-			shiftedData[((i - (i % N)) + ((i % N) + combinedColShiftIndex + M) % M - combinedRowShiftIndex * N +
-						 LENGTH) %
-						LENGTH] = mData[i];
+			shiftedData[i] = mData[(((i - i % M) / M + combinedRowShiftIndex) %  N) * M + (i - combinedColShiftIndex + M) % M];
 		}
 		return shiftedData;
 	}
@@ -172,13 +174,6 @@ public:  // Helper getter
 	{
 		mRowShiftIndex = (mRowShiftIndex + y + N) % N;
 		mColShiftIndex = (mColShiftIndex + x + M) % M;
-	}
-
-	void resetData(std::vector<T> data)
-	{
-		mData          = data;
-		mRowShiftIndex = 0;
-		mColShiftIndex = 0;
 	}
 
 public:
@@ -192,46 +187,28 @@ public:
 
 	void indexRevision(const unsigned int nRow, const unsigned int nCol, const T& newValue)
 	{
-		mData[((nRow * N) + (nCol + mColShiftIndex + M) % M - mRowShiftIndex * N + LENGTH) % LENGTH] = newValue;
+		validateIndex(nCol, nRow);
+		unsigned int i = nCol + nRow * M;
+		mData[(((i - i % M) / M + mRowShiftIndex) %  N) * M + (i - mColShiftIndex + M) % M] = newValue;
 	}
 
 	void rowRevision(const unsigned int nRow, const T& newValue)
 	{
 		validateIndex(0, nRow);
-
-		// Compute the effective shifted row
-		unsigned int shiftedRow = (nRow + mRowShiftIndex) % N;
-
-		// The linear index for the first element in the shifted row
-		unsigned int shiftedIndex = shiftedRow * M;
-
 #pragma omp parallel for
 		for(int i = 0; i < M; ++i) {
-			// Calculate the index for each element in the shifted row
-			unsigned int index = (shiftedIndex + i) % LENGTH;
-
-			// Update the value at the index
-			mData[index] = newValue;
+			unsigned int index = nRow * M + i;
+			mData[(((index - index % M) / M + mRowShiftIndex) %  N) * M + (index - mColShiftIndex + M) % M] = newValue;
 		}
 	}
 
 	void colRevision(const unsigned int nCol, const T& newValue)
 	{
 		validateIndex(nCol, 0);
-
-		// Compute the effective shifted column
-		unsigned int shiftedCol = (nCol + mColShiftIndex) % M;
-
 #pragma omp parallel for
-		for(int row = 0; row < N; ++row) {
-			// The linear index for the first element in each row
-			unsigned int baseIndex = row * M;
-
-			// Calculate the linear index for each element in the shifted column
-			unsigned int index = (baseIndex + shiftedCol) % LENGTH;
-
-			// Update the value at the index
-			mData[index] = newValue;
+		for(int i = 0; i < M; ++i) {
+			unsigned int index = i * M + nCol;
+			mData[(((index - index % M) / M + mRowShiftIndex) %  N) * M + (index - mColShiftIndex + M) % M] = newValue;
 		}
 	}
 
@@ -239,7 +216,7 @@ public:
 	{
 		std::cout << "---------------------- " << M << "x" << N << " ----------------------\n";
 
-		std::vector<T> newVector = getShiftedData();  // Make sure to specify the type of the elements in newVector
+		std::vector<T> newVector = getShiftedData();
 
 		// Initialize variables to keep track of rows and columns
 		int row = 0, col = 0;

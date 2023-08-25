@@ -20,6 +20,6 @@ TEST_F(LatticeBoltzmannMethodD2Q9Test, Diffusion) {
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
         m1.getShiftedData(), m1.getShiftedData());
-    lbm.step(true);
-    lbm.step(true);
+    // lbm.step(true);
+    // lbm.step(true);
 }

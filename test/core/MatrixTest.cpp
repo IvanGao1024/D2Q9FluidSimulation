@@ -2,8 +2,60 @@
 #include "../../src/core/Matrix.hpp"
 
 class MatrixTest : public ::testing::Test {
+public:
+    Matrix<int> matrix0;
+    Matrix<int> matrix1;
+    Matrix<int> matrix2;
+    Matrix<int> matrix3;
+    Matrix<int> matrix4;
+    Matrix<int> matrix5;
+    Matrix<int> matrix6;
+    Matrix<int> matrix7;
+    Matrix<int> matrix8;
+
 protected:
     void SetUp() override {
+        matrix0 = Matrix<int>(3, 3);
+
+        matrix1 = Matrix<int>(3, 3);
+        matrix1.shift(1, 0);
+        EXPECT_EQ(matrix1.getRowShiftIndex(), 0);
+        EXPECT_EQ(matrix1.getColShiftIndex(), 1);
+
+        matrix2 = Matrix<int>(3, 3);
+        matrix2.shift(0, 1);
+        EXPECT_EQ(matrix2.getRowShiftIndex(), 1);
+        EXPECT_EQ(matrix2.getColShiftIndex(), 0);
+
+        matrix3 = Matrix<int>(3, 3);
+        matrix3.shift(-1, 0);
+        EXPECT_EQ(matrix3.getRowShiftIndex(), 0);
+        EXPECT_EQ(matrix3.getColShiftIndex(), 2);
+
+        matrix4 = Matrix<int>(3, 3);
+        matrix4.shift(0, -1);
+        EXPECT_EQ(matrix4.getRowShiftIndex(), 2);
+        EXPECT_EQ(matrix4.getColShiftIndex(), 0);
+
+        matrix5 = Matrix<int>(3, 3);
+        matrix5.shift(1, 1);
+        EXPECT_EQ(matrix5.getRowShiftIndex(), 1);
+        EXPECT_EQ(matrix5.getColShiftIndex(), 1);
+
+        matrix6 = Matrix<int>(3, 3);
+        matrix6.shift(-1, 1);
+        EXPECT_EQ(matrix6.getRowShiftIndex(), 1);
+        EXPECT_EQ(matrix6.getColShiftIndex(), 2);
+
+        matrix7 = Matrix<int>(3, 3);
+        matrix7.shift(-1, -1);
+        EXPECT_EQ(matrix7.getRowShiftIndex(), 2);
+        EXPECT_EQ(matrix7.getColShiftIndex(), 2);
+
+        matrix8 = Matrix<int>(3, 3);
+        matrix8.shift(1, -1);
+        EXPECT_EQ(matrix8.getRowShiftIndex(), 2);
+        EXPECT_EQ(matrix8.getColShiftIndex(), 1);
     }
 
     void TearDown() override {
@@ -18,16 +70,16 @@ TEST_F(MatrixTest, ConstructorInitiationTest) {
     auto expected = std::make_pair(0u, 0u); // 'u' for unsigned int
     auto result = m0.getShiftIndexPair();
     EXPECT_EQ(expected, result);
-    EXPECT_EQ(m0.getWidth(), 1);
-    EXPECT_EQ(m0.getHeight(), 1);
+    EXPECT_EQ(m0.getM(), 1);
+    EXPECT_EQ(m0.getN(), 1);
     EXPECT_EQ(m0.getLength(), 1);
     EXPECT_EQ(m0.getShiftedData().at(0), 0);
     
     Matrix<int> m1(20,20);
     EXPECT_EQ(m1.getRowShiftIndex(), 0);
     EXPECT_EQ(m1.getColShiftIndex(), 0);
-    EXPECT_EQ(m1.getWidth(), 20);
-    EXPECT_EQ(m1.getHeight(), 20);
+    EXPECT_EQ(m1.getM(), 20);
+    EXPECT_EQ(m1.getN(), 20);
     EXPECT_EQ(m1.getLength(), 400);
 #pragma omp parallel for
     for (int i = 0; i < m1.getLength(); ++i) {
@@ -37,8 +89,8 @@ TEST_F(MatrixTest, ConstructorInitiationTest) {
     Matrix<int> m2(20,20, 0);
     EXPECT_EQ(m2.getRowShiftIndex(), 0);
     EXPECT_EQ(m2.getColShiftIndex(), 0);
-    EXPECT_EQ(m2.getWidth(), 20);
-    EXPECT_EQ(m2.getHeight(), 20);
+    EXPECT_EQ(m2.getM(), 20);
+    EXPECT_EQ(m2.getN(), 20);
     EXPECT_EQ(m2.getLength(), 400);
 #pragma omp parallel for
     for (int i = 0; i < m2.getLength(); ++i) {
@@ -48,8 +100,8 @@ TEST_F(MatrixTest, ConstructorInitiationTest) {
     Matrix<int> m3(20,20, 1);
     EXPECT_EQ(m3.getRowShiftIndex(), 0);
     EXPECT_EQ(m3.getColShiftIndex(), 0);
-    EXPECT_EQ(m3.getWidth(), 20);
-    EXPECT_EQ(m3.getHeight(), 20);
+    EXPECT_EQ(m3.getM(), 20);
+    EXPECT_EQ(m3.getN(), 20);
     EXPECT_EQ(m3.getLength(), 400);
 #pragma omp parallel for
     for (int i = 0; i < m3.getLength(); ++i) {
@@ -86,18 +138,15 @@ TEST_F(MatrixTest, Shift) {
     EXPECT_EQ(m0.getShiftedData(-1, 1), m6.getShiftedData());
     EXPECT_EQ(m0.getShiftedData(-1, -1), m7.getShiftedData());
     EXPECT_EQ(m0.getShiftedData(1, -1), m8.getShiftedData());
-    m0.shift(1, 0);
-    EXPECT_EQ(m0.getColShiftIndex(), 1);
-    m0.shift(1, 0);
-    EXPECT_EQ(m0.getColShiftIndex(), 2);
-    m0.shift(1, 0);
-    EXPECT_EQ(m0.getColShiftIndex(), 0);
-    m0.shift(0, 1);
-    EXPECT_EQ(m0.getRowShiftIndex(), 1);
-    m0.shift(0, 1);
-    EXPECT_EQ(m0.getRowShiftIndex(), 2);
-    m0.shift(0, 1);
-    EXPECT_EQ(m0.getRowShiftIndex(), 0);
+
+    EXPECT_EQ(m1.getShiftedData(-1, 0), m0.getShiftedData());
+    EXPECT_EQ(m2.getShiftedData(0, -1), m0.getShiftedData());
+    EXPECT_EQ(m3.getShiftedData(1, 0), m0.getShiftedData());
+    EXPECT_EQ(m4.getShiftedData(0, 1), m0.getShiftedData());
+    EXPECT_EQ(m5.getShiftedData(-1, -1), m0.getShiftedData());
+    EXPECT_EQ(m6.getShiftedData(1, -1), m0.getShiftedData());
+    EXPECT_EQ(m7.getShiftedData(1, 1), m0.getShiftedData());
+    EXPECT_EQ(m8.getShiftedData(-1, 1), m0.getShiftedData());
 }
 
 TEST_F(MatrixTest, Fill) {
@@ -107,18 +156,108 @@ TEST_F(MatrixTest, Fill) {
     EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
 }
 
+TEST_F(MatrixTest, IndexRevision) {
+    Matrix<int> m0(3, 3, {1, 0, 0, 0, 0, 0, 0, 0, 0});
+    Matrix<int> m1(3, 3);
+    m1.indexRevision(0, 0, 1);
+    EXPECT_EQ(m1.getShiftedData(), m0.getShiftedData());
+
+    matrix1.indexRevision(0, 0, 1);
+    EXPECT_EQ(matrix1.getShiftedData(), m0.getShiftedData());
+}
+
 TEST_F(MatrixTest, RowRevision) {
-    Matrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
-    Matrix<int> m1(3, 3, {0, 0, 0, 25, 30, 35, 27, 30, 33});
-    m0.rowRevision(0, 0);
-    EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
+    Matrix<int> m0(3, 3, {1, 1, 1, 0, 0, 0, 0, 0, 0});
+    Matrix<int> mBasic(3, 3);
+    mBasic.rowRevision(0, 1);
+    EXPECT_EQ(mBasic.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m1(3, 3);
+    m1.shift(1, 0);
+    m1.rowRevision(0, 1);
+    EXPECT_EQ(m1.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m2(3, 3);
+    m2.shift(0, 1);
+    m2.rowRevision(0, 1);
+    EXPECT_EQ(m2.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m3(3, 3);
+    m3.shift(-1, 0);
+    m3.rowRevision(0, 1);
+    EXPECT_EQ(m2.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m4(3, 3);
+    m4.shift(0, -1);
+    m4.rowRevision(0, 1);
+    EXPECT_EQ(m4.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m5(3, 3);
+    m5.shift(1, 1);
+    m5.rowRevision(0, 1);
+    EXPECT_EQ(m5.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m6(3, 3);
+    m6.shift(-1, 1);
+    m6.rowRevision(0, 1);
+    EXPECT_EQ(m6.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m7(3, 3);
+    m7.shift(-1, -1);
+    m7.rowRevision(0, 1);
+    EXPECT_EQ(m7.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m8(3, 3);
+    m8.shift(1, -1);
+    m8.rowRevision(0, 1);
+    EXPECT_EQ(m8.getShiftedData(), m0.getShiftedData());
 }
 
 TEST_F(MatrixTest, ColRevision) {
-    Matrix<int> m0(3, 3, {25, 30, 35, 25, 30, 35, 27, 30, 33});
-    Matrix<int> m1(3, 3, {0, 30, 35, 0, 30, 35, 0, 30, 33});
-    m0.colRevision(0, 0);
-    EXPECT_EQ(m0.getShiftedData(), m1.getShiftedData());
+    Matrix<int> m0(3, 3, {1, 0, 0, 1, 0, 0, 1, 0, 0});
+    Matrix<int> mBasic(3, 3);
+    mBasic.colRevision(0, 1);
+    EXPECT_EQ(mBasic.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m1(3, 3);
+    m1.shift(1, 0);
+    m1.colRevision(0, 1);
+    EXPECT_EQ(m1.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m2(3, 3);
+    m2.shift(0, 1);
+    m2.colRevision(0, 1);
+    EXPECT_EQ(m2.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m3(3, 3);
+    m3.shift(-1, 0);
+    m3.colRevision(0, 1);
+    EXPECT_EQ(m2.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m4(3, 3);
+    m4.shift(0, -1);
+    m4.colRevision(0, 1);
+    EXPECT_EQ(m4.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m5(3, 3);
+    m5.shift(1, 1);
+    m5.colRevision(0, 1);
+    EXPECT_EQ(m5.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m6(3, 3);
+    m6.shift(-1, 1);
+    m6.colRevision(0, 1);
+    EXPECT_EQ(m6.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m7(3, 3);
+    m7.shift(-1, -1);
+    m7.colRevision(0, 1);
+    EXPECT_EQ(m7.getShiftedData(), m0.getShiftedData());
+
+    Matrix<int> m8(3, 3);
+    m8.shift(1, -1);
+    m8.colRevision(0, 1);
+    EXPECT_EQ(m8.getShiftedData(), m0.getShiftedData());
 }
 
 // TEST_F(CartesianMatrixTest, MismatchedRowCount) {

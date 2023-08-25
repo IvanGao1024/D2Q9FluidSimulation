@@ -19,6 +19,7 @@
 #include <stdexcept>  // For std::invalid_argument
 #include <regex>
 
+#include "Matrix.hpp"
 class OpenCLMain
 {
 private:
@@ -35,8 +36,10 @@ private:
 	static inline cl::Device           mDevice;
 	static inline cl::NDRange          mLocal;
 	static inline cl::Context          mContext;
-	static inline cl::Program::Sources mSources;
+	static inline cl::Program::Sources mArithmeticSources;
+	static inline cl::Program::Sources mBoundarySources;
 	static inline cl::Program          mArithmeticProgram;
+	static inline cl::Program          mBoundaryProgram;
 
 	// parameter
 	static inline cl::CommandQueue                                   mQueue;
@@ -107,52 +110,52 @@ private:
 		mContext = cl::Context({mDevice});
 
 		// Initiate Arithmetic Kernel
-		std::string kernelCode = R"(
-			void kernel kernelAddingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int M, const unsigned int N) {
+		std::string arithmeticKernelCode = R"(
+			void kernel kernelAddingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
-				unsigned int originalIndexB = ((i - i % M) / N + shiftBRow ) %  N * M + (i - shiftBCol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
+				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] + B[originalIndexB];
 			}
-			void kernel kernelAddingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+			void kernel kernelAddingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] + C;
 			}
 
-			void kernel kernelSubtractingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int M, const unsigned int N) {
+			void kernel kernelSubtractingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
-				unsigned int originalIndexB = ((i - i % M) / N + shiftBRow ) %  N * M + (i - shiftBCol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
+				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] - B[originalIndexB];
 			}
-			void kernel kernelSubtractingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+			void kernel kernelSubtractingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] - C;
 			}
-			void kernel kernelConstantSubtracting(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+			void kernel kernelConstantSubtracting(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = C - A[originalIndexA];
 			}
 
-			void kernel kernelMultiplicatingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int M, const unsigned int N) {
+			void kernel kernelMultiplicatingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
-				unsigned int originalIndexB = ((i - i % M) / N + shiftBRow ) %  N * M + (i - shiftBCol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
+				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] * B[originalIndexB];
 			}
-			void kernel kernelMultiplicatingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+			void kernel kernelMultiplicatingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] * C;
 			}
 
-			void kernel kernelDividingByArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int M, const unsigned int N) {
+			void kernel kernelDividingByArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
-				unsigned int originalIndexB = ((i - i % M) / N + shiftBRow ) %  N * M + (i - shiftBCol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
+				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				int bValue = B[originalIndexB];
 				if (bValue != 0) {  // Ensure don't divide by zero
 					C[i] = A[originalIndexA] / bValue;
@@ -160,18 +163,18 @@ private:
 					C[i] = 0;
 				}
 			}
-			void kernel kernelDividingByConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+			void kernel kernelDividingByConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				if (C != 0) {  // Ensure don't divide by zero
-					unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+					unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 					B[i] = A[originalIndexA] / C;
 				} else {
 					B[i] = 0;
 				}
 			}
-			void kernel kernelConstantDividingBy(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int M, const unsigned int N) {
+			void kernel kernelConstantDividingBy(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
-				unsigned int originalIndexA = ((i - i % M) / N + shiftARow ) %  N * M + (i - shiftACol) % M;
+				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				int aValue = A[originalIndexA];
 				if (aValue != 0) {  // Ensure don't divide by zero
 					B[i] = C / aValue;
@@ -180,13 +183,50 @@ private:
 				}
 			}
 		)";
-		mSources.push_back({kernelCode.c_str(), kernelCode.length()});
-		mArithmeticProgram = cl::Program(mContext, mSources);
+		mArithmeticSources.push_back({arithmeticKernelCode.c_str(), arithmeticKernelCode.length()});
+		mArithmeticProgram = cl::Program(mContext, mArithmeticSources);
 		if(mArithmeticProgram.build({mDevice}) != CL_SUCCESS) {
 			std::cout << " Error building: " << mArithmeticProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(mDevice) << "\n";
-			throw std::runtime_error("Error building source code");
+			throw std::runtime_error("Error building arithmetic source code");
+		}
+
+		// Initiate Boundary Kernel
+		std::string boundaryKernelCode = R"(
+			void kernel TopBoundaryKernelAdiabatic(global int* A, const unsigned int shiftARow, const unsigned int shiftACol, const unsigned int N, const unsigned int M) {
+				unsigned int topIndex = get_global_id(0);
+				unsigned int topBelowIndex = get_global_id(0) + M;
+				unsigned int originalIndexTop = (((topIndex - topIndex % M) / M + shiftARow) %  N) * M + (topIndex - shiftACol + M) % M;
+				unsigned int originalIndexTopBelow = (((topBelowIndex - topBelowIndex % M) / M + shiftARow) %  N) * M + (topBelowIndex - shiftACol + M) % M;
+				A[originalIndexTop] = A[originalIndexTopBelow];
+			}
+			void kernel BottomBoundaryKernelAdiabatic(global int* A, const unsigned int shiftARow, const unsigned int shiftACol, const unsigned int N, const unsigned int M) {
+				unsigned int bottomIndex = get_global_id(0) + M * (N - 1);
+				unsigned int bottomAboveIndex = get_global_id(0) + M * (N - 2);
+				unsigned int originalIndexBottom = (((bottomIndex - bottomIndex % M) / M + shiftARow) %  N) * M + (bottomIndex - shiftACol + M) % M;
+				unsigned int originalIndexbottomAbove = (((bottomAboveIndex - bottomAboveIndex % M) / M + shiftARow) %  N) * M + (bottomAboveIndex - shiftACol + M) % M;
+				A[originalIndexBottom] = A[bottomAboveIndex];
+			}
+		)";
+		mBoundarySources.push_back({boundaryKernelCode.c_str(), boundaryKernelCode.length()});
+		mBoundaryProgram = cl::Program(mContext, mBoundarySources);
+		if(mBoundaryProgram.build({mDevice}) != CL_SUCCESS) {
+			std::cout << " Error building: " << mBoundaryProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(mDevice) << "\n";
+			throw std::runtime_error("Error building boundary source code");
 		}
 	}
+
+	~OpenCLMain()
+	{
+		// Cleanup OpenCL resources
+		mArithmeticProgram = nullptr;
+		mBoundaryProgram   = nullptr;
+	}
+
+	// Delete copy/move constructors and assignment operators
+	OpenCLMain(OpenCLMain const&)     = delete;
+	void operator=(OpenCLMain const&) = delete;
+	OpenCLMain(OpenCLMain&&)          = delete;
+	void operator=(OpenCLMain&&)      = delete;
 
 public:
 	static OpenCLMain& instance()
@@ -446,8 +486,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -464,8 +504,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -485,8 +525,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -521,8 +561,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -539,8 +579,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -560,8 +600,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -596,8 +636,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -614,8 +654,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -635,8 +675,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -671,8 +711,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -689,8 +729,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -710,8 +750,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayWidth,
-						mArrayHeight)
+						mArrayHeight,
+						mArrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -766,6 +806,37 @@ public:
 	}
 
 	template<typename T>
+	static void ApplyTopBoundaryKernelAdiabatic(Matrix<T>& matrix)
+	{
+		if(!std::is_arithmetic<T>::value) {
+			throw std::invalid_argument("Array values type are not numeric.");
+		}
+		if(!(matrix.getLength() && !(matrix.getLength() & (matrix.getLength() - 1)))) {
+			throw std::invalid_argument("Array length are not power of 2.");
+		}
+
+		// Initialize parameter
+		mQueue  = cl::CommandQueue(mContext, mDevice);
+		mGlobal = cl::NDRange(matrix.getM());
+
+		// Initialize kernels
+		auto TopBoundaryAdiabaticKernel =
+			cl::compatibility::make_kernel<cl::Buffer, unsigned int, unsigned int, unsigned int, unsigned int>(
+				cl::Kernel(mBoundaryProgram, "TopBoundaryKernelAdiabatic"));
+		cl::Buffer A_d = cl::Buffer(mContext, CL_MEM_READ_WRITE, sizeof(T) * matrix.getLength());
+		mQueue.enqueueWriteBuffer(A_d, CL_TRUE, 0, sizeof(T) * matrix.getLength(), matrix.getDataData());
+		TopBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+								   A_d,
+								   matrix.getRowShiftIndex(),
+								   matrix.getColShiftIndex(),
+								   matrix.getN(),
+								   matrix.getM())
+			.wait();
+		mQueue.enqueueReadBuffer(A_d, CL_TRUE, 0, sizeof(T) * matrix.getLength(), matrix.getDataData());
+	}
+
+private:
+	template<typename T>
 	static char getCacheIndex()
 	{
 		// std::cout << "Pool has ";
@@ -787,18 +858,6 @@ public:
 		// std::cout << index << " allocated.\n";
 		return index;
 	}
-
-	~OpenCLMain()
-	{
-		// Cleanup OpenCL resources
-		mArithmeticProgram = nullptr;
-	}
-
-	// Delete copy/move constructors and assignment operators
-	OpenCLMain(OpenCLMain const&)     = delete;
-	void operator=(OpenCLMain const&) = delete;
-	OpenCLMain(OpenCLMain&&)          = delete;
-	void operator=(OpenCLMain&&)      = delete;
 };
 
 #endif  // OPENCL_MAIN
