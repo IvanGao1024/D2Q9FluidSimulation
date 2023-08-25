@@ -33,9 +33,9 @@ public:
 	 * @param nColumn
 	 * @param initialValue
 	 */
-	Matrix(const unsigned int nRow         = MATRIX_DEFAULT_HEIGHT,
-		   const unsigned int nColumn      = MATRIX_DEFAULT_WIDTH,
-		   const T            initialValue = T(),
+	Matrix(const unsigned int nRow          = MATRIX_DEFAULT_HEIGHT,
+		   const unsigned int nColumn       = MATRIX_DEFAULT_WIDTH,
+		   const T            initialValue  = T(),
 		   const unsigned int rowShiftIndex = 0,
 		   const unsigned int colShiftIndex = 0):
 		N(nRow),
@@ -58,9 +58,9 @@ public:
 	Matrix(const unsigned int   nRow,
 		   const unsigned int   nColumn,
 		   const std::vector<T> values,
-		   const unsigned int magnification = 1,
-		   const unsigned int rowShiftIndex = 0,
-		   const unsigned int colShiftIndex = 0):
+		   const unsigned int   magnification = 1,
+		   const unsigned int   rowShiftIndex = 0,
+		   const unsigned int   colShiftIndex = 0):
 		N(nRow),
 		M(nColumn),
 		LENGTH(nRow * nColumn)
@@ -165,7 +165,8 @@ public:  // Helper getter
 
 #pragma omp parallel for
 		for(size_t i = 0; i < LENGTH; ++i) {
-			shiftedData[i] = mData[(((i - i % M) / M + combinedRowShiftIndex) %  N) * M + (i - combinedColShiftIndex + M) % M];
+			shiftedData[i] =
+				mData[(((i - i % M) / M + combinedRowShiftIndex) % N) * M + (i - combinedColShiftIndex + M) % M];
 		}
 		return shiftedData;
 	}
@@ -188,8 +189,8 @@ public:
 	void indexRevision(const unsigned int nRow, const unsigned int nCol, const T& newValue)
 	{
 		validateIndex(nCol, nRow);
-		unsigned int i = nCol + nRow * M;
-		mData[(((i - i % M) / M + mRowShiftIndex) %  N) * M + (i - mColShiftIndex + M) % M] = newValue;
+		unsigned int i                                                                     = nCol + nRow * M;
+		mData[(((i - i % M) / M + mRowShiftIndex) % N) * M + (i - mColShiftIndex + M) % M] = newValue;
 	}
 
 	void rowRevision(const unsigned int nRow, const T& newValue)
@@ -198,7 +199,7 @@ public:
 #pragma omp parallel for
 		for(int i = 0; i < M; ++i) {
 			unsigned int index = nRow * M + i;
-			mData[(((index - index % M) / M + mRowShiftIndex) %  N) * M + (index - mColShiftIndex + M) % M] = newValue;
+			mData[(((index - index % M) / M + mRowShiftIndex) % N) * M + (index - mColShiftIndex + M) % M] = newValue;
 		}
 	}
 
@@ -208,7 +209,7 @@ public:
 #pragma omp parallel for
 		for(int i = 0; i < M; ++i) {
 			unsigned int index = i * M + nCol;
-			mData[(((index - index % M) / M + mRowShiftIndex) %  N) * M + (index - mColShiftIndex + M) % M] = newValue;
+			mData[(((index - index % M) / M + mRowShiftIndex) % N) * M + (index - mColShiftIndex + M) % M] = newValue;
 		}
 	}
 

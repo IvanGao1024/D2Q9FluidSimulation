@@ -42,15 +42,12 @@ private:
 	static inline cl::Program          mBoundaryProgram;
 
 	// parameter
-	static inline cl::CommandQueue                                   mQueue;
-	static inline cl::NDRange                                        mGlobal;
-	static inline unsigned int                                       mArrayWidth;
-	static inline unsigned int                                       mArrayHeight;
-	static inline unsigned int                                       mArrayLength;
-	static inline std::vector<cl::Buffer>                            mBuffers;
-	static inline std::vector<std::pair<unsigned int, unsigned int>> mBufferShifts;
-	static inline std::set<char>                                     mAvailableCacheIndex;
-	static inline char                                               mNewCacheIndex;
+	static inline cl::CommandQueue        mQueue;
+	static inline cl::NDRange             mGlobal;
+	static inline std::set<char>          mAvailableCacheIndex;
+	static inline char                    mNewCacheIndex;
+	static inline unsigned int            mArrayLength;
+	static inline std::vector<cl::Buffer> mBuffers;
 
 private:
 	OpenCLMain()
@@ -319,10 +316,7 @@ public:
 		const std::vector<std::pair<unsigned int, unsigned int>> arrayShifts =
 			std::vector<std::pair<unsigned int, unsigned int>>())
 	{
-		mArrayWidth   = arrayWidth;
-		mArrayHeight  = arrayHeight;
-		mArrayLength  = mArrayWidth * mArrayHeight;
-		mBufferShifts = arrayShifts;
+		mArrayLength = arrayWidth * arrayHeight;
 
 		if(!std::is_arithmetic<T>::value) {
 			throw std::invalid_argument("Array values type are not numeric.");
@@ -486,8 +480,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -504,8 +498,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -525,8 +519,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -561,8 +555,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -579,8 +573,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -600,8 +594,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -636,8 +630,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -654,8 +648,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -675,8 +669,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -711,8 +705,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(second),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -729,8 +723,8 @@ public:
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
 						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
 						std::get<int>(first),
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex >= arrayValues.size())  // meaning is a cache index
 					{
@@ -750,8 +744,8 @@ public:
 						mBuffers[charIndex2],
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
 						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						mArrayHeight,
-						mArrayWidth)
+						arrayHeight,
+						arrayWidth)
 						.wait();
 					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
 					{
@@ -806,7 +800,11 @@ public:
 	}
 
 	template<typename T>
-	static void ApplyTopBoundaryKernelAdiabatic(Matrix<T>& matrix)
+	static void ApplyAdiabaticBoundaryKernel(Matrix<T>& matrix,
+											 bool       top    = true,
+											 bool       bottom = false,
+											 bool       left   = false,
+											 bool       right  = false)
 	{
 		if(!std::is_arithmetic<T>::value) {
 			throw std::invalid_argument("Array values type are not numeric.");
@@ -816,23 +814,65 @@ public:
 		}
 
 		// Initialize parameter
-		mQueue  = cl::CommandQueue(mContext, mDevice);
-		mGlobal = cl::NDRange(matrix.getM());
+		mQueue = cl::CommandQueue(mContext, mDevice);
 
 		// Initialize kernels
 		auto TopBoundaryAdiabaticKernel =
 			cl::compatibility::make_kernel<cl::Buffer, unsigned int, unsigned int, unsigned int, unsigned int>(
 				cl::Kernel(mBoundaryProgram, "TopBoundaryKernelAdiabatic"));
+
+		// Initialize buffer
 		cl::Buffer A_d = cl::Buffer(mContext, CL_MEM_READ_WRITE, sizeof(T) * matrix.getLength());
 		mQueue.enqueueWriteBuffer(A_d, CL_TRUE, 0, sizeof(T) * matrix.getLength(), matrix.getDataData());
-		TopBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-								   A_d,
-								   matrix.getRowShiftIndex(),
-								   matrix.getColShiftIndex(),
-								   matrix.getN(),
-								   matrix.getM())
-			.wait();
-		mQueue.enqueueReadBuffer(A_d, CL_TRUE, 0, sizeof(T) * matrix.getLength(), matrix.getDataData());
+
+		// Initialize sequence
+		if(top || bottom) {
+			mGlobal = cl::NDRange(matrix.getM());
+			if(top) {
+				TopBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										   A_d,
+										   matrix.getRowShiftIndex(),
+										   matrix.getColShiftIndex(),
+										   matrix.getN(),
+										   matrix.getM())
+					.wait();
+			}
+			if(bottom) {
+				// BottomBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+				// 						A_d,
+				// 						matrix.getRowShiftIndex(),
+				// 						matrix.getColShiftIndex(),
+				// 						matrix.getN(),
+				// 						matrix.getM())
+				// 	.wait();
+			}
+		}
+		if(left || right) {
+			mGlobal = cl::NDRange(matrix.getN());
+			mGlobal = cl::NDRange(matrix.getM());
+			if(left) {
+				// LeftBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+				// 						A_d,
+				// 						matrix.getRowShiftIndex(),
+				// 						matrix.getColShiftIndex(),
+				// 						matrix.getN(),
+				// 						matrix.getM())
+				// 	.wait();
+			}
+			if(right) {
+				// RightBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+				// 						A_d,
+				// 						matrix.getRowShiftIndex(),
+				// 						matrix.getColShiftIndex(),
+				// 						matrix.getN(),
+				// 						matrix.getM())
+				// 	.wait();
+			}
+		}
+
+		if(top || bottom || left || right) {
+			mQueue.enqueueReadBuffer(A_d, CL_TRUE, 0, sizeof(T) * matrix.getLength(), matrix.getDataData());
+		}
 	}
 
 private:

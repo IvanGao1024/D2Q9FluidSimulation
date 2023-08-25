@@ -27,6 +27,8 @@ target_link_libraries(MainTests Qt6::Gui)
 target_link_libraries(MainTests Qt6::Widgets)
 target_compile_options(MainTests PRIVATE --coverage)
 target_link_options(MainTests PRIVATE --coverage)
+target_compile_options(MainTests PRIVATE -pg)
+target_link_options(MainTests PRIVATE -pg)
 
 # Executable Benchmark
 add_executable(MainBenchmarks core/MainBenchmark.cpp)

@@ -463,7 +463,7 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedShiftCase) {
     EXPECT_EQ(result, result5.getShiftedData());
 }
 
-TEST_F(OpenCLMainTest, Boundary_TopAdiabaticBasicTest) {
+TEST_F(OpenCLMainTest, Boundary_AdiabaticBasicTest) {
     Matrix<int> m1(8, 8, 0);
     m1.rowRevision(1, 1);
 
@@ -471,21 +471,19 @@ TEST_F(OpenCLMainTest, Boundary_TopAdiabaticBasicTest) {
     result1.rowRevision(0, 1);
     result1.rowRevision(1, 1);
 
-    OpenCLMain::instance().ApplyTopBoundaryKernelAdiabatic(m1);
+    OpenCLMain::instance().ApplyAdiabaticBoundaryKernel(m1);
     EXPECT_EQ(m1.getShiftedData(), result1.getShiftedData());
 }
 
-TEST_F(OpenCLMainTest, Boundary_TopAdiabaticShiftTest) {
+TEST_F(OpenCLMainTest, Boundary_AdiabaticShiftTest) {
     matrix2.indexRevision(0, 0, 0);
     matrix2.rowRevision(1, 1);
-    matrix2.print();
 
     Matrix<int> result1(8, 8, 0);
     result1.rowRevision(0, 1);
     result1.rowRevision(1, 1);
-    result1.print();
 
-    OpenCLMain::instance().ApplyTopBoundaryKernelAdiabatic(matrix2);
+    OpenCLMain::instance().ApplyAdiabaticBoundaryKernel(matrix2);
     matrix2.print();
     EXPECT_EQ(matrix2.getShiftedData(), result1.getShiftedData());
 }

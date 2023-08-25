@@ -73,10 +73,44 @@ case $Command in
     test) # test
         # valgrind --tool=memcheck --leak-check=yes ./temp/build/bin/MainBenchmarks --benchmark_filter=LatticeBoltzmannMethodD2Q9_InitiationBenchmark
         rm -rf temp/documentations/coverages
+        rm -rf temp/documentations/profile
         mkdir -p temp/documentations/coverages
+        mkdir -p temp/documentations/profile
+
+        # Run the tests and generate gmon.out
+        # Check if MainTests exists and is executable
+        if [ ! -x "temp/build/bin/MainTests" ]; then
+            echo "MainTests not found or is not executable. Exiting."
+            exit 1
+        fi
         temp/build/bin/MainTests
-        temp/build/bin/MainBenchmarks --benchmark_time_unit=ms
+        # temp/build/bin/MainBenchmarks --benchmark_time_unit=ms
+
+        # Generate the coverage report
         gcovr -r . -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o temp/documentations/coverages/report_coverage.html
+
+        # Move gmon.out and gprof directory to the desired directory
+        mv gmon.out temp/build/
+
+        # Check if the virtual environment already exists, if not create it
+        if [ ! -d "temp/python3/gprof_venv" ]; then
+            python3 -m venv temp/python3/gprof_venv
+        fi
+
+        # Activate the virtual environment
+        source temp/python3/gprof_venv/bin/activate  # On Windows, use `temp/build/gprof_venv\Scripts\activate`
+
+        # Install gprof2dot
+        pip install gprof2dot
+
+        # Generate the gprof output and save it as text
+        gprof temp/build/bin/MainTests temp/build/gmon.out > temp/documentations/profile/gprof_analysis.txt
+
+        # Generate a dot graph, filtering out functions that take less than 1ms
+        gprof temp/build/bin/MainTests temp/build/gmon.out | gprof2dot -n 0.01 -e 0 | dot -Tpng -o temp/documentations/profile/profile.png
+
+        # Deactivate the virtual environment
+        deactivate
         ;;
     run) # run
         temp/build/bin/FastFluidDynamicSimulationForGames
