@@ -201,7 +201,21 @@ private:
 				unsigned int bottomAboveIndex = get_global_id(0) + M * (N - 2);
 				unsigned int originalIndexBottom = (((bottomIndex - bottomIndex % M) / M + shiftARow) %  N) * M + (bottomIndex - shiftACol + M) % M;
 				unsigned int originalIndexbottomAbove = (((bottomAboveIndex - bottomAboveIndex % M) / M + shiftARow) %  N) * M + (bottomAboveIndex - shiftACol + M) % M;
-				A[originalIndexBottom] = A[bottomAboveIndex];
+				A[originalIndexBottom] = A[originalIndexbottomAbove];
+			}
+			void kernel LeftBoundaryKernelAdiabatic(global int* A, const unsigned int shiftARow, const unsigned int shiftACol, const unsigned int N, const unsigned int M) {
+				unsigned int leftIndex = get_global_id(0) * M;
+				unsigned int leftRightIndex = get_global_id(0) * M + 1;
+				unsigned int originalIndexLeft = (((leftIndex - leftIndex % M) / M + shiftARow) %  N) * M + (leftIndex - shiftACol + M) % M;
+				unsigned int originalIndexLeftRight = (((leftRightIndex - leftRightIndex % M) / M + shiftARow) %  N) * M + (leftRightIndex - shiftACol + M) % M;
+				A[originalIndexLeft] = A[originalIndexLeftRight];
+			}
+			void kernel RightBoundaryKernelAdiabatic(global int* A, const unsigned int shiftARow, const unsigned int shiftACol, const unsigned int N, const unsigned int M) {
+				unsigned int rightIndex = (get_global_id(0) + 1) * M - 1;
+				unsigned int rightLeftIndex = (get_global_id(0) + 1) * M - 2;
+				unsigned int originalIndexRight = (((rightIndex - rightIndex % M) / M + shiftARow) %  N) * M + (rightIndex - shiftACol + M) % M;
+				unsigned int originalIndexRightLeft = (((rightLeftIndex - rightLeftIndex % M) / M + shiftARow) %  N) * M + (rightLeftIndex - shiftACol + M) % M;
+				A[originalIndexRight] = A[originalIndexRightLeft];
 			}
 		)";
 		mBoundarySources.push_back({boundaryKernelCode.c_str(), boundaryKernelCode.length()});
@@ -799,12 +813,34 @@ public:
 		}
 	}
 
+	/**
+	 * @brief
+	 *
+	 * @param BoundaryIndex
+	 * 0 = No Boundary
+	 * 1 = Adiabatic
+	 * 2 = Constant
+	 * 3 = Bounce Back
+	 * 4 = Open
+	 *
+	 * @tparam T
+	 * @param matrix
+	 * @param top
+	 * @param topBoundaryIndex
+	 * @param bottom
+	 * @param bottomBoundaryIndex
+	 * @param left
+	 * @param leftBoundaryIndex
+	 * @param right
+	 * @param rightBoundaryIndex
+	 */
 	template<typename T>
-	static void ApplyAdiabaticBoundaryKernel(Matrix<T>& matrix,
-											 bool       top    = true,
-											 bool       bottom = false,
-											 bool       left   = false,
-											 bool       right  = false)
+	static void ApplyBoundaryKernel(Matrix<T>&             matrix,
+									const unsigned int     topBoundaryIndex    = 0,
+									const unsigned int     bottomBoundaryIndex = 0,
+									const unsigned int     leftBoundaryIndex   = 0,
+									const unsigned int     rightBoundaryIndex  = 0,
+									const std::vector<int> params              = std::vector<int>())
 	{
 		if(!std::is_arithmetic<T>::value) {
 			throw std::invalid_argument("Array values type are not numeric.");
@@ -817,60 +853,85 @@ public:
 		mQueue = cl::CommandQueue(mContext, mDevice);
 
 		// Initialize kernels
-		auto TopBoundaryAdiabaticKernel =
+		auto TopBoundaryKernelAdiabatic =
 			cl::compatibility::make_kernel<cl::Buffer, unsigned int, unsigned int, unsigned int, unsigned int>(
 				cl::Kernel(mBoundaryProgram, "TopBoundaryKernelAdiabatic"));
+		auto BottomBoundaryKernelAdiabatic =
+			cl::compatibility::make_kernel<cl::Buffer, unsigned int, unsigned int, unsigned int, unsigned int>(
+				cl::Kernel(mBoundaryProgram, "BottomBoundaryKernelAdiabatic"));
+		auto LeftBoundaryKernelAdiabatic =
+			cl::compatibility::make_kernel<cl::Buffer, unsigned int, unsigned int, unsigned int, unsigned int>(
+				cl::Kernel(mBoundaryProgram, "LeftBoundaryKernelAdiabatic"));
+		auto RightBoundaryKernelAdiabatic =
+			cl::compatibility::make_kernel<cl::Buffer, unsigned int, unsigned int, unsigned int, unsigned int>(
+				cl::Kernel(mBoundaryProgram, "RightBoundaryKernelAdiabatic"));
 
 		// Initialize buffer
 		cl::Buffer A_d = cl::Buffer(mContext, CL_MEM_READ_WRITE, sizeof(T) * matrix.getLength());
 		mQueue.enqueueWriteBuffer(A_d, CL_TRUE, 0, sizeof(T) * matrix.getLength(), matrix.getDataData());
 
 		// Initialize sequence
-		if(top || bottom) {
+		switch(topBoundaryIndex) {
+		case 0: break;
+		case 1:
 			mGlobal = cl::NDRange(matrix.getM());
-			if(top) {
-				TopBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-										   A_d,
-										   matrix.getRowShiftIndex(),
-										   matrix.getColShiftIndex(),
-										   matrix.getN(),
-										   matrix.getM())
-					.wait();
-			}
-			if(bottom) {
-				// BottomBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-				// 						A_d,
-				// 						matrix.getRowShiftIndex(),
-				// 						matrix.getColShiftIndex(),
-				// 						matrix.getN(),
-				// 						matrix.getM())
-				// 	.wait();
-			}
-		}
-		if(left || right) {
-			mGlobal = cl::NDRange(matrix.getN());
-			mGlobal = cl::NDRange(matrix.getM());
-			if(left) {
-				// LeftBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-				// 						A_d,
-				// 						matrix.getRowShiftIndex(),
-				// 						matrix.getColShiftIndex(),
-				// 						matrix.getN(),
-				// 						matrix.getM())
-				// 	.wait();
-			}
-			if(right) {
-				// RightBoundaryAdiabaticKernel(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-				// 						A_d,
-				// 						matrix.getRowShiftIndex(),
-				// 						matrix.getColShiftIndex(),
-				// 						matrix.getN(),
-				// 						matrix.getM())
-				// 	.wait();
-			}
+			TopBoundaryKernelAdiabatic(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+									   A_d,
+									   matrix.getRowShiftIndex(),
+									   matrix.getColShiftIndex(),
+									   matrix.getN(),
+									   matrix.getM())
+				.wait();
+			break;
+		default: break;
 		}
 
-		if(top || bottom || left || right) {
+		switch(bottomBoundaryIndex) {
+		case 0: break;
+		case 1:
+			mGlobal = cl::NDRange(matrix.getM());
+			BottomBoundaryKernelAdiabatic(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+									   A_d,
+									   matrix.getRowShiftIndex(),
+									   matrix.getColShiftIndex(),
+									   matrix.getN(),
+									   matrix.getM())
+				.wait();
+			break;
+		default: break;
+		}
+
+		switch(leftBoundaryIndex) {
+		case 0: break;
+		case 1:
+			mGlobal = cl::NDRange(matrix.getN());
+			LeftBoundaryKernelAdiabatic(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+									   A_d,
+									   matrix.getRowShiftIndex(),
+									   matrix.getColShiftIndex(),
+									   matrix.getN(),
+									   matrix.getM())
+				.wait();
+			break;
+		default: break;
+		}
+
+		switch(rightBoundaryIndex) {
+		case 0: break;
+		case 1:
+			mGlobal = cl::NDRange(matrix.getN());
+			RightBoundaryKernelAdiabatic(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+									   A_d,
+									   matrix.getRowShiftIndex(),
+									   matrix.getColShiftIndex(),
+									   matrix.getN(),
+									   matrix.getM())
+				.wait();
+			break;
+		default: break;
+		}
+
+		if(topBoundaryIndex == 0 || bottomBoundaryIndex == 0 || leftBoundaryIndex == 0 || rightBoundaryIndex == 0) {
 			mQueue.enqueueReadBuffer(A_d, CL_TRUE, 0, sizeof(T) * matrix.getLength(), matrix.getDataData());
 		}
 	}

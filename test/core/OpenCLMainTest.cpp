@@ -466,59 +466,56 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedShiftCase) {
 TEST_F(OpenCLMainTest, Boundary_AdiabaticBasicTest) {
     Matrix<int> m1(8, 8, 0);
     m1.rowRevision(1, 1);
+    m1.rowRevision(6, 1);
 
     Matrix<int> result1(8, 8, 0);
     result1.rowRevision(0, 1);
     result1.rowRevision(1, 1);
+    result1.rowRevision(6, 1);
+    result1.rowRevision(7, 1);
 
-    OpenCLMain::instance().ApplyAdiabaticBoundaryKernel(m1);
+    OpenCLMain::instance().ApplyBoundaryKernel(m1, 1, 1);
     EXPECT_EQ(m1.getShiftedData(), result1.getShiftedData());
+
+    Matrix<int> m2(8, 8, 0);
+    m2.colRevision(1, 1);
+    m2.colRevision(6, 1);
+
+    Matrix<int> result2(8, 8, 0);
+    result2.colRevision(0, 1);
+    result2.colRevision(1, 1);
+    result2.colRevision(6, 1);
+    result2.colRevision(7, 1);
+
+    OpenCLMain::instance().ApplyBoundaryKernel(m2, 0, 0, 1, 1);
+    EXPECT_EQ(m2.getShiftedData(), result2.getShiftedData());
 }
 
 TEST_F(OpenCLMainTest, Boundary_AdiabaticShiftTest) {
     matrix2.indexRevision(0, 0, 0);
     matrix2.rowRevision(1, 1);
+    matrix2.rowRevision(6, 1);
 
     Matrix<int> result1(8, 8, 0);
     result1.rowRevision(0, 1);
     result1.rowRevision(1, 1);
+    result1.rowRevision(6, 1);
+    result1.rowRevision(7, 1);
 
-    OpenCLMain::instance().ApplyAdiabaticBoundaryKernel(matrix2);
+    OpenCLMain::instance().ApplyBoundaryKernel(matrix2, 1, 1);
     matrix2.print();
     EXPECT_EQ(matrix2.getShiftedData(), result1.getShiftedData());
+
+    matrix3.indexRevision(0, 0, 0);
+    matrix3.colRevision(1, 1);
+    matrix3.colRevision(6, 1);
+
+    Matrix<int> result2(8, 8, 0);
+    result2.colRevision(0, 1);
+    result2.colRevision(1, 1);
+    result2.colRevision(6, 1);
+    result2.colRevision(7, 1);
+
+    OpenCLMain::instance().ApplyBoundaryKernel(matrix3, 0, 0, 1, 1);
+    EXPECT_EQ(matrix3.getShiftedData(), result2.getShiftedData());
 }
-
-
-			// void kernel RightBoundaryKernel(global int* A, const unsigned int boundaryIndex, const unsgined int boundaryPara, const unsigned int N, const unsigned int M) {
-			// 	unsigned int topIndex = get_global_id(0);
-			// 	unsigned int bottomIndex = get_global_id(0) + M * (N - 1);
-			// 	unsigned int leftIndex = (get_global_id(0) * M) % (N * M);
-			// 	unsgined int rightIndex = (get_global_id(0) * M - 1 ) % (N * M);
-			// 	unsigned int originalIndexTop = ((topIndex - topIndex % M) / N + shiftARow ) %  N * M + (topIndex - shiftACol) % M;
-			// 	unsigned int originalIndexBottom = ((bottomIndex - bottomIndex % M) / N + shiftARow ) %  N * M + (bottomIndex - shiftACol) % M;
-			// 	unsigned int originalIndexLeft = ((leftIndex - leftIndex % M) / N + shiftARow ) %  N * M + (leftIndex - shiftACol) % M;
-			// 	unsigned int originalIndexRight = ((rightIndex - rightIndex % M) / N + shiftARow ) %  N * M + (rightIndex - shiftACol) % M;
-			// 	A[originalIndexTop] = C - A[originalIndexA] ;
-			// }
-			// void kernel LeftBoundaryKernel(global int* A, const unsigned int boundaryIndex, const unsgined int boundaryPara, const unsigned int N, const unsigned int M) {
-			// 	unsigned int topIndex = get_global_id(0);
-			// 	unsigned int bottomIndex = get_global_id(0) + M * (N - 1);
-			// 	unsigned int leftIndex = (get_global_id(0) * M) % (N * M);
-			// 	unsgined int rightIndex = (get_global_id(0) * M - 1 ) % (N * M);
-			// 	unsigned int originalIndexTop = ((topIndex - topIndex % M) / N + shiftARow ) %  N * M + (topIndex - shiftACol) % M;
-			// 	unsigned int originalIndexBottom = ((bottomIndex - bottomIndex % M) / N + shiftARow ) %  N * M + (bottomIndex - shiftACol) % M;
-			// 	unsigned int originalIndexLeft = ((leftIndex - leftIndex % M) / N + shiftARow ) %  N * M + (leftIndex - shiftACol) % M;
-			// 	unsigned int originalIndexRight = ((rightIndex - rightIndex % M) / N + shiftARow ) %  N * M + (rightIndex - shiftACol) % M;
-			// 	A[originalIndexTop] = C - A[originalIndexA] ;
-			// }
-			// void kernel LeftBoundaryKernel(global int* A, const unsigned int boundaryIndex, const unsgined int boundaryPara, const unsigned int N, const unsigned int M) {
-			// 	unsigned int topIndex = get_global_id(0);
-			// 	unsigned int bottomIndex = get_global_id(0) + M * (N - 1);
-			// 	unsigned int leftIndex = (get_global_id(0) * M) % (N * M);
-			// 	unsgined int rightIndex = (get_global_id(0) * M - 1 ) % (N * M);
-			// 	unsigned int originalIndexTop = ((topIndex - topIndex % M) / N + shiftARow ) %  N * M + (topIndex - shiftACol) % M;
-			// 	unsigned int originalIndexBottom = ((bottomIndex - bottomIndex % M) / N + shiftARow ) %  N * M + (bottomIndex - shiftACol) % M;
-			// 	unsigned int originalIndexLeft = ((leftIndex - leftIndex % M) / N + shiftARow ) %  N * M + (leftIndex - shiftACol) % M;
-			// 	unsigned int originalIndexRight = ((rightIndex - rightIndex % M) / N + shiftARow ) %  N * M + (rightIndex - shiftACol) % M;
-			// 	A[originalIndexTop] = C - A[originalIndexA] ;
-			// }
