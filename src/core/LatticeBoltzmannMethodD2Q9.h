@@ -87,10 +87,10 @@ private:
 	Boundary     mRight;
 
 private:  // Internal data
-	bool           mKinematicViscosityArrayRevised;
-	bool           mDiffusionCoefficientArrayRevised;
-	Matrix<double> mKinematicViscosityArray;
-	Matrix<double> mDiffusionCoefficientArray;
+	bool           mKinematicViscosityRevised;
+	bool           mDiffusionCoefficientRevised;
+	Matrix<double> mKinematicViscosity;
+	Matrix<double> mDiffusionCoefficient;
 	Matrix<double> mDensity[MATRIX_SIZE];
 	Matrix<double> mTemperature[MATRIX_SIZE];
 
@@ -104,8 +104,8 @@ private:                      // Derived data
 	Matrix<double> mResultUV2;  // u^2 + v^2
 
 public:  // Pre allocate memory for output
-	Matrix<double> mResultingDensityArray;
-	Matrix<double> mResultingTemperatureArray;
+	Matrix<double> mResultingDensityMatrix;
+	Matrix<double> mResultingTemperatureMatrix;
 
 public:
 	// 	// Blocks

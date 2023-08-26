@@ -26,10 +26,10 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int        heigh
 	mRight  = right;
 	// mEntities = entities;
 
-	mKinematicViscosityArrayRevised   = true;
-	mDiffusionCoefficientArrayRevised = true;
-	mKinematicViscosityArray          = Matrix<double>(mWidth, mHeight, kinematicViscosityArray);
-	mDiffusionCoefficientArray        = Matrix<double>(mWidth, mHeight, diffusionCoefficientArray);
+	mKinematicViscosityRevised   = true;
+	mDiffusionCoefficientRevised = true;
+	mKinematicViscosity          = Matrix<double>(mWidth, mHeight, kinematicViscosityArray);
+	mDiffusionCoefficient        = Matrix<double>(mWidth, mHeight, diffusionCoefficientArray);
 
 	if(initialDensityArray.empty()) {
 		initialDensityArray.resize(mLength);
@@ -134,10 +134,10 @@ void LatticeBoltzmannMethodD2Q9::step(bool saveImage)
 	if(saveImage) {
 		buildResultingDensityMatrix();
 		buildResultingTemperatureMatrix();
-		std::cout << "mResultingDensityArray\n";
-		mResultingDensityArray.print();
-		std::cout << "mResultingTemperatureArray\n";
-		mResultingTemperatureArray.print();
+		std::cout << "mResultingDensityMatrix\n";
+		mResultingDensityMatrix.print();
+		std::cout << "mResultingTemperatureMatrix\n";
+		mResultingTemperatureMatrix.print();
 	}
 }
 
@@ -145,58 +145,57 @@ void LatticeBoltzmannMethodD2Q9::collision()
 {
 	buildResultingDensityMatrix();
 	buildResultingTemperatureMatrix();
-	if(mKinematicViscosityArrayRevised) {
-		mOmega_m =
-			OpenCLMain::instance().evaluateArithmeticFormula("1 / ((A * 3) + 0.5)",
-															 std::vector<Matrix<double>*>{&mKinematicViscosityArray});
+	if(mKinematicViscosityRevised) {
+		mOmega_m = OpenCLMain::instance().evaluateArithmeticFormula("1 / ((A * 3) + 0.5)",
+																	std::vector<Matrix<double>*>{&mKinematicViscosity});
 	}
-	if(mDiffusionCoefficientArrayRevised) {
+	if(mDiffusionCoefficientRevised) {
 		mOmega_s =
 			OpenCLMain::instance().evaluateArithmeticFormula("1 / ((A * 3) + 0.5)",
-															 std::vector<Matrix<double>*>{&mDiffusionCoefficientArray});
+															 std::vector<Matrix<double>*>{&mDiffusionCoefficient});
 	}
 
 	mTemperature[0] = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (1 - B) + B * (4/9) * C * 1",
-		std::vector<Matrix<double>*>{&mTemperature[0], &mOmega_s, &mResultingTemperatureArray});
+		std::vector<Matrix<double>*>{&mTemperature[0], &mOmega_s, &mResultingTemperatureMatrix});
 	mTemperature[1] = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (1 - B) + B * (4/9) * C * (1 + 3 * D)",
-		std::vector<Matrix<double>*>{&mTemperature[1], &mOmega_s, &mResultingTemperatureArray, &mVelocityU});
+		std::vector<Matrix<double>*>{&mTemperature[1], &mOmega_s, &mResultingTemperatureMatrix, &mVelocityU});
 	mTemperature[2] = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (1 - B) + B * (4/9) * C * (1 + 3 * D)",
-		std::vector<Matrix<double>*>{&mTemperature[2], &mOmega_s, &mResultingTemperatureArray, &mVelocityV});
+		std::vector<Matrix<double>*>{&mTemperature[2], &mOmega_s, &mResultingTemperatureMatrix, &mVelocityV});
 	mTemperature[3] = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (1 - B) + B * (4/9) * C * (1 - 3 * D)",
-		std::vector<Matrix<double>*>{&mTemperature[3], &mOmega_s, &mResultingTemperatureArray, &mVelocityU});
+		std::vector<Matrix<double>*>{&mTemperature[3], &mOmega_s, &mResultingTemperatureMatrix, &mVelocityU});
 	mTemperature[4] = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (1 - B) + B * (4/9) * C * (1 - 3 * D)",
-		std::vector<Matrix<double>*>{&mTemperature[4], &mOmega_s, &mResultingTemperatureArray, &mVelocityV});
+		std::vector<Matrix<double>*>{&mTemperature[4], &mOmega_s, &mResultingTemperatureMatrix, &mVelocityV});
 	mTemperature[5] =
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 + 3 * D + 3 * E)",
 														 std::vector<Matrix<double>*>{&mTemperature[5],
 																					  &mOmega_s,
-																					  &mResultingTemperatureArray,
+																					  &mResultingTemperatureMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV});
 	mTemperature[6] =
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 - 3 * D + 3 * E)",
 														 std::vector<Matrix<double>*>{&mTemperature[6],
 																					  &mOmega_s,
-																					  &mResultingTemperatureArray,
+																					  &mResultingTemperatureMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV});
 	mTemperature[7] =
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 - 3 * D - 3 * E)",
 														 std::vector<Matrix<double>*>{&mTemperature[7],
 																					  &mOmega_s,
-																					  &mResultingTemperatureArray,
+																					  &mResultingTemperatureMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV});
 	mTemperature[8] =
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 + 3 * D - 3 * E)",
 														 std::vector<Matrix<double>*>{&mTemperature[8],
 																					  &mOmega_s,
-																					  &mResultingTemperatureArray,
+																					  &mResultingTemperatureMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV});
 	mResultU2 = OpenCLMain::instance().evaluateArithmeticFormula("A * A", std::vector<Matrix<double>*>{&mVelocityU});
@@ -205,12 +204,12 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		OpenCLMain::instance().evaluateArithmeticFormula("A + B", std::vector<Matrix<double>*>{&mResultU2, &mResultV2});
 	mDensity[0] = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (1 - B) + B * (4/9) * C * (1 - 1.5 * D)",
-		std::vector<Matrix<double>*>{&mDensity[0], &mOmega_m, &mResultingDensityArray, &mResultUV2});
+		std::vector<Matrix<double>*>{&mDensity[0], &mOmega_m, &mResultingDensityMatrix, &mResultUV2});
 	mDensity[1] = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (1 - B) + B * (4/9) * C * (1 + 3 * D + 4.5 * E - 1.5 * F)",
 		std::vector<Matrix<double>*>{&mDensity[1],
 									 &mOmega_m,
-									 &mResultingDensityArray,
+									 &mResultingDensityMatrix,
 									 &mVelocityU,
 									 &mResultU2,
 									 &mResultUV2});
@@ -218,7 +217,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		"A * (1 - B) + B * (4/9) * C * (1 + 3 * D + 4.5 * E - 1.5 * F)",
 		std::vector<Matrix<double>*>{&mDensity[2],
 									 &mOmega_m,
-									 &mResultingDensityArray,
+									 &mResultingDensityMatrix,
 									 &mVelocityV,
 									 &mResultV2,
 									 &mResultUV2});
@@ -226,7 +225,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		"A * (1 - B) + B * (4/9) * C * (1 - 3 * D + 4.5 * E - 1.5 * F)",
 		std::vector<Matrix<double>*>{&mDensity[3],
 									 &mOmega_m,
-									 &mResultingDensityArray,
+									 &mResultingDensityMatrix,
 									 &mVelocityU,
 									 &mResultU2,
 									 &mResultUV2});
@@ -234,7 +233,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		"A * (1 - B) + B * (4/9) * C * (1 - 3 * D + 4.5 * E - 1.5 * F)",
 		std::vector<Matrix<double>*>{&mDensity[4],
 									 &mOmega_m,
-									 &mResultingDensityArray,
+									 &mResultingDensityMatrix,
 									 &mVelocityV,
 									 &mResultV2,
 									 &mResultUV2});
@@ -242,7 +241,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 + 3 * D + 3 * E + 3 * F)",
 														 std::vector<Matrix<double>*>{&mDensity[5],
 																					  &mOmega_m,
-																					  &mResultingDensityArray,
+																					  &mResultingDensityMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV,
 																					  &mResultUV2});
@@ -250,7 +249,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 - 3 * D + 3 * E + 3 * F)",
 														 std::vector<Matrix<double>*>{&mDensity[6],
 																					  &mOmega_m,
-																					  &mResultingDensityArray,
+																					  &mResultingDensityMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV,
 																					  &mResultUV2});
@@ -258,7 +257,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 - 3 * D - 3 * E + 3 * F)",
 														 std::vector<Matrix<double>*>{&mDensity[7],
 																					  &mOmega_m,
-																					  &mResultingDensityArray,
+																					  &mResultingDensityMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV,
 																					  &mResultUV2});
@@ -266,7 +265,7 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		OpenCLMain::instance().evaluateArithmeticFormula("A * (1 - B) + B * (4/9) * C * (1 + 3 * D - 3 * E + 3 * F)",
 														 std::vector<Matrix<double>*>{&mDensity[8],
 																					  &mOmega_m,
-																					  &mResultingDensityArray,
+																					  &mResultingDensityMatrix,
 																					  &mVelocityU,
 																					  &mVelocityV,
 																					  &mResultUV2});
@@ -390,7 +389,7 @@ void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()
 
 void LatticeBoltzmannMethodD2Q9::buildResultingDensityMatrix()
 {
-	mResultingDensityArray = OpenCLMain::instance().evaluateArithmeticFormula(
+	mResultingDensityMatrix = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (4/9) + B * (1/9) + C* (1/9) + D * (1/9) + E * (1/9) + F * (1/36) + G * (1/36) + H * (1/36) + I * (1/36)",
 		std::vector<Matrix<double>*>{&mDensity[0],
 									 &mDensity[1],
@@ -405,7 +404,7 @@ void LatticeBoltzmannMethodD2Q9::buildResultingDensityMatrix()
 
 void LatticeBoltzmannMethodD2Q9::buildResultingTemperatureMatrix()
 {
-	mResultingTemperatureArray = OpenCLMain::instance().evaluateArithmeticFormula(
+	mResultingTemperatureMatrix = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A * (4/9) + B * (1/9) + C* (1/9) + D * (1/9) + E * (1/9) + F * (1/36) + G * (1/36) + H * (1/36) + I * (1/36)",
 		std::vector<Matrix<double>*>{&mTemperature[0],
 									 &mTemperature[1],
