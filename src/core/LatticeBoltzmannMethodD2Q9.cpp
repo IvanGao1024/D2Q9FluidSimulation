@@ -3,7 +3,6 @@
 #include <omp.h>
 #include <cassert>
 
-#include "HeatMap.hpp"
 #include "OpenCLMain.hpp"
 
 LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int        height,

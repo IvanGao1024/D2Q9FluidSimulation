@@ -12,19 +12,20 @@
 #ifndef MAIN_CPP
 #define MAIN_CPP
 
-#include <QApplication>
-#include "LatticeMainWindow.h"
-
-const quint16 HEIGHT = 800;
-const quint16 WIDTH  = 800;
+#include "core/LatticeBoltzmannMethodD2Q9.h"
 
 int main(int argc, char *argv[])
 {
-	QApplication app(argc, argv);
-
-	LatticeMainWindow mLatticeMainWindow(HEIGHT, WIDTH);
-	mLatticeMainWindow.show();
-
-	return QApplication::exec();
+	Matrix<double> m1(8, 8, 0.25);
+	LatticeBoltzmannMethodD2Q9 lbm (7, 7,
+		LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
+		LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),
+		LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
+		LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 1),
+		m1.getShiftedData(), m1.getShiftedData());
+	for (size_t i = 0; i < 2; i++)
+	{
+		lbm.step(true);
+	}
 }
 #endif  // MAIN_CPP

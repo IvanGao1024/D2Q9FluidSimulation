@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(FastFluidDynamicSimulationForGames LANGUAGES CXX VERSION 1.0)
+project(D2Q9FluidSimulation LANGUAGES CXX VERSION 1.0)
 
 ### Version
 set(CMAKE_AUTOUIC ON)

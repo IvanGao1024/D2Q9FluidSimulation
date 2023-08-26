@@ -9,8 +9,6 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 set(PROJECT_SOURCES
     main.cpp
-    LatticeMainWindow.h
-    LatticeMainWindow.cpp
     core/Matrix.hpp
     core/LatticeBoltzmannMethodD2Q9.h
     core/LatticeBoltzmannMethodD2Q9.cpp

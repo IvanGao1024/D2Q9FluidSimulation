@@ -1,7 +1,7 @@
 #!/bin/bash
 # environment variable
 
-# QT_LIB_PATH=/6.2.0/gcc_64/lib
+# QT_LIB_PATH=/6.5.0/gcc_64/lib
 QT_LIB_PATH=/home/ivan/QT6.5.1/6.5.1/gcc_64/lib
 
 # default value
