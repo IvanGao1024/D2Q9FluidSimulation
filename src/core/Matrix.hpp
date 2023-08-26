@@ -143,6 +143,11 @@ public:  // Helper getter
 		return std::pair<unsigned int, unsigned int>(mRowShiftIndex, mColShiftIndex);
 	}
 
+	std::vector<T> getData() const
+	{
+		return mData;
+	}
+
 	T* getDataData()
 	{
 		return mData.data();
@@ -246,6 +251,130 @@ private:  // Helper
 			std::string message =
 				"Index out of bounds: (" + std::to_string(columnX) + ", " + std::to_string(rowY) + ")";
 			throw std::out_of_range(message);
+		}
+	}
+
+public:
+	void topAdiabatic()
+	{
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int topIndex      = i;
+			unsigned int topBelowIndex = i + M;
+			unsigned int originalIndexTop =
+				(((topIndex - topIndex % M) / M + mRowShiftIndex) % N) * M + (topIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexTopBelow = (((topBelowIndex - topBelowIndex % M) / M + mRowShiftIndex) % N) * M +
+												 (topBelowIndex - mColShiftIndex + M) % M;
+			mData[originalIndexTop] = mData[originalIndexTopBelow];
+		}
+	}
+
+	void bottomAdiabatic()
+	{
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int bottomIndex         = i + M * (N - 1);
+			unsigned int bottomAboveIndex    = i + M * (N - 2);
+			unsigned int originalIndexBottom = (((bottomIndex - bottomIndex % M) / M + mRowShiftIndex) % N) * M +
+											   (bottomIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexbottomAbove =
+				(((bottomAboveIndex - bottomAboveIndex % M) / M + mRowShiftIndex) % N) * M +
+				(bottomAboveIndex - mColShiftIndex + M) % M;
+			mData[originalIndexBottom] = mData[originalIndexbottomAbove];
+		}
+	}
+
+	void leftAdiabatic()
+	{
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int leftIndex      = i * M;
+			unsigned int leftRightIndex = i * M + 1;
+			unsigned int originalIndexLeft =
+				(((leftIndex - leftIndex % M) / M + mRowShiftIndex) % N) * M + (leftIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexLeftRight =
+				(((leftRightIndex - leftRightIndex % M) / M + mRowShiftIndex) % N) * M +
+				(leftRightIndex - mColShiftIndex + M) % M;
+			mData[originalIndexLeft] = mData[originalIndexLeftRight];
+		}
+	}
+
+	void rightAdiabatic()
+	{
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int rightIndex     = (i + 1) * M - 1;
+			unsigned int rightLeftIndex = (i + 1) * M - 2;
+			unsigned int originalIndexRight =
+				(((rightIndex - rightIndex % M) / M + mRowShiftIndex) % N) * M + (rightIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexRightLeft =
+				(((rightLeftIndex - rightLeftIndex % M) / M + mRowShiftIndex) % N) * M +
+				(rightLeftIndex - mColShiftIndex + M) % M;
+			mData[originalIndexRight] = mData[originalIndexRightLeft];
+		}
+	}
+
+	void topDirichlet(const int C, const Matrix<T>& matrix)
+	{
+		std::vector<T> other              = matrix.getData();
+		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
+		unsigned int   otherColShiftIndex = matrix.getColShiftIndex();
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int topIndex = i;
+			unsigned int originalIndexTop =
+				(((topIndex - topIndex % M) / M + mRowShiftIndex) % N) * M + (topIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexOtherTop = (((topIndex - topIndex % M) / M + otherRowShiftIndex) % N) * M +
+												 (topIndex - otherColShiftIndex + M) % M;
+			mData[originalIndexTop] = C - other[originalIndexOtherTop];
+		}
+	}
+
+	void bottomDirichlet(const int C, const Matrix<T>& matrix)
+	{
+		std::vector<T> other              = matrix.getData();
+		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
+		unsigned int   otherColShiftIndex = matrix.getColShiftIndex();
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int bottomIndex      = i + M * (N - 1);
+			unsigned int originalIndexTop = (((bottomIndex - bottomIndex % M) / M + mRowShiftIndex) % N) * M +
+											(bottomIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexOtherTop = (((bottomIndex - bottomIndex % M) / M + otherRowShiftIndex) % N) * M +
+												 (bottomIndex - otherColShiftIndex + M) % M;
+			mData[originalIndexTop] = C - other[originalIndexOtherTop];
+		}
+	}
+
+	void leftDirichlet(const int C, const Matrix<T>& matrix)
+	{
+		std::vector<T> other              = matrix.getData();
+		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
+		unsigned int   otherColShiftIndex = matrix.getColShiftIndex();
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int leftIndex = i * M;
+			unsigned int originalIndexTop =
+				(((leftIndex - leftIndex % M) / M + mRowShiftIndex) % N) * M + (leftIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexOtherTop = (((leftIndex - leftIndex % M) / M + otherRowShiftIndex) % N) * M +
+												 (leftIndex - otherColShiftIndex + M) % M;
+			mData[originalIndexTop] = C - other[originalIndexOtherTop];
+		}
+	}
+
+	void rightDirichlet(const int C, const Matrix<T>& matrix)
+	{
+		std::vector<T> other              = matrix.getData();
+		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
+		unsigned int   otherColShiftIndex = matrix.getColShiftIndex();
+#pragma omp parallel for
+		for(int i = 0; i < M; ++i) {
+			unsigned int rightIndex = (i + 1) * M - 1;
+			unsigned int originalIndexTop =
+				(((rightIndex - rightIndex % M) / M + mRowShiftIndex) % N) * M + (rightIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexOtherTop = (((rightIndex - rightIndex % M) / M + otherRowShiftIndex) % N) * M +
+												 (rightIndex - otherColShiftIndex + M) % M;
+			mData[originalIndexTop] = C - other[originalIndexOtherTop];
 		}
 	}
 };

@@ -32,7 +32,7 @@ class LatticeBoltzmannMethodD2Q9
 	static inline constexpr unsigned int MATRIX_SIZE = 9;  // the number of direction
 
 public:
-	enum BoundaryType { NO, BOUNCEBACK, OPEN, CONSTANT, ADIABATIC };
+	enum BoundaryType { NO, ADIABATIC, CONSTANT, BOUNCEBACK, OPEN };
 	struct Boundary {
 		BoundaryType boundary;
 		int          parameter1;
@@ -120,14 +120,14 @@ public:
 public:
 	LatticeBoltzmannMethodD2Q9(unsigned int              height,
 							   unsigned int              width,
-							   Boundary                  top                       = Boundary(),
-							   Boundary                  bottom                    = Boundary(),
-							   Boundary                  left                      = Boundary(),
-							   Boundary                  right                     = Boundary(),
-							   std::vector<unsigned int> initialDensityArray       = std::vector<unsigned int>(),
-							   std::vector<unsigned int> initialTemperatureArray   = std::vector<unsigned int>(),
-							   std::vector<unsigned int> kinematicViscosityArray   = std::vector<unsigned int>(),
-							   std::vector<unsigned int> diffusionCoefficientArray = std::vector<unsigned int>());
+							   Boundary                  top,
+							   Boundary                  bottom,
+							   Boundary                  left,
+							   Boundary                  right,
+							   std::vector<unsigned int> kinematicViscosityArray,
+							   std::vector<unsigned int> diffusionCoefficientArray,
+							   std::vector<unsigned int> initialDensityArray     = std::vector<unsigned int>(),
+							   std::vector<unsigned int> initialTemperatureArray = std::vector<unsigned int>());
 
 	void step(bool saveImage = false);
 	void buildResultingDensityMatrix();
