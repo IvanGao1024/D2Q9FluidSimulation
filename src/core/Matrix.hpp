@@ -1,5 +1,5 @@
-#ifndef CARTESIAN_MATRIX
-#define CARTESIAN_MATRIX
+#ifndef MATRIX
+#define MATRIX
 
 #include <vector>
 #include <iostream>
@@ -226,25 +226,18 @@ public:
 	void print() const
 	{
 		std::cout << "---------------------- " << M << "x" << N << " ----------------------\n";
-
 		std::vector<T> newVector = getShiftedData();
-
-		// Initialize variables to keep track of rows and columns
 		int row = 0, col = 0;
-
-		// Iterate through the entire shifted data
 		for(int i = 0; i < LENGTH; ++i) {
 			std::cout << newVector[i];
 
-			// Increment the column counter
 			col++;
 
-			// Check if the end of a row has been reached
 			if(col == M) {
-				std::cout << "\n";  // New line at the end of a row
-				col = 0;            // Reset the column counter
+				std::cout << "\n";
+				col = 0;
 			} else {
-				std::cout << " | ";  // Separator between columns
+				std::cout << " | ";
 			}
 		}
 	}
@@ -385,4 +378,4 @@ public:
 	}
 };
 
-#endif  // CARTESIAN_MATRIX
+#endif  // MATRIX

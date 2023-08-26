@@ -14,9 +14,9 @@
 #include <cassert>
 #include <memory>
 #include <iostream>
-#include <cstdarg>  // For va_start, va_end
+#include <cstdarg>
 #include <set>
-#include <stdexcept>  // For std::invalid_argument
+#include <stdexcept>
 #include <regex>
 
 #include "Matrix.hpp"
@@ -66,15 +66,15 @@ private:
 			throw std::runtime_error("[OpenCL] Platform not found.");
 		}
 
-		// List found platforms
-		// for(const cl::Platform& platform : all_platforms) {
-		// 	std::cout << "[OpenCL] Platform found: " << platform.getInfo<CL_PLATFORM_NAME>() << "\n";
-		// }
+		List found platforms
+		for(const cl::Platform& platform : all_platforms) {
+			std::cout << "[OpenCL] Platform found: " << platform.getInfo<CL_PLATFORM_NAME>() << "\n";
+		}
 
 		// Select the default platform
 		mPlatform                        = all_platforms[0];
 		UserMachineProfile.mPlatformName = mPlatform.getInfo<CL_PLATFORM_NAME>();
-		// std::cout << "[OpenCL] Platform selected: " << UserMachineProfile.mPlatformName << "\n";
+		std::cout << "[OpenCL] Platform selected: " << UserMachineProfile.mPlatformName << "\n";
 
 		// Handel Devices
 		std::vector<cl::Device> all_devices;
@@ -86,20 +86,20 @@ private:
 			throw std::runtime_error("[OpenCL] Device not found.");
 		}
 
-		// List found devices
-		// for(const cl::Device& device : all_devices) {
-		// 	std::cout << "[OpenCL] Device found: " << device.getInfo<CL_DEVICE_NAME>() << "\n";
-		// }
+		List found devices
+		for(const cl::Device& device : all_devices) {
+			std::cout << "[OpenCL] Device found: " << device.getInfo<CL_DEVICE_NAME>() << "\n";
+		}
 
 		// Select the default device
 		mDevice                        = all_devices[0];
 		UserMachineProfile.mDeviceName = mDevice.getInfo<CL_DEVICE_NAME>();
-		// std::cout << "[OpenCL] Device selected:" << UserMachineProfile.mDeviceName << "\n";
+		std::cout << "[OpenCL] Device selected:" << UserMachineProfile.mDeviceName << "\n";
 
 		// Set local work group size
 		mDevice.getInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE, &UserMachineProfile.mOptimalWorkGroupSize);
 		cl::NDRange mLocalWorkGroupSize(UserMachineProfile.mOptimalWorkGroupSize);
-		// std::cout << "[OpenCL] Local work-group size set to:" << UserMachineProfile.mOptimalWorkGroupSize << "\n";
+		std::cout << "[OpenCL] Local work-group size set to:" << UserMachineProfile.mOptimalWorkGroupSize << "\n";
 
 		// Handel context
 		mContext = cl::Context({mDevice});
@@ -249,10 +249,10 @@ public:
 					operators.pop();
 				}
 
-				if(!operators.empty()) {  // Pop the '(' from the stack
+				if(!operators.empty()) {
 					operators.pop();
 				}
-			} else {  // Assume it's part of an operand (could be multi-digit numbers or multi-letter variable names)
+			} else {
 				token += ch;
 			}
 		}
@@ -273,7 +273,6 @@ public:
 
 	/**
 	 * @brief
-	 * @attention a character after last character used will be used for result, so max 25 variable can be used.
 	 * @attention The use of 'A'-'Y' as variable name must be used in sequencial order.
 	 * @tparam T
 	 * @param expression
@@ -384,13 +383,13 @@ public:
 			mQueue   = cl::CommandQueue(mContext, mDevice);
 			mGlobal  = cl::NDRange(mArrayLength);
 			mBuffers = std::vector<cl::Buffer>(array.size() + 1);
+			
 			// Allocate buffer memory
 #pragma omp parallel for
 			for(size_t i = 0; i < array.size(); i++) {
 				mBuffers[i] = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(double) * mArrayLength);
 			}
 			mBuffers[array.size()] = cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(double) * mArrayLength);
-			// std::cout << "Total of " << array.size() + 1 << " buffer created.\n";
 
 			// Initialize buffer
 #pragma omp parallel for
@@ -449,7 +448,7 @@ public:
 										 mArrayN,
 										 mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
@@ -466,7 +465,7 @@ public:
 										 mArrayN,
 										 mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -486,11 +485,11 @@ public:
 									  mArrayN,
 									  mArrayM)
 						.wait();
-					if(charIndex1 >= array.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= array.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -521,7 +520,7 @@ public:
 											  mArrayN,
 											  mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
@@ -538,7 +537,7 @@ public:
 											  mArrayN,
 											  mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -558,11 +557,11 @@ public:
 										   mArrayN,
 										   mArrayM)
 						.wait();
-					if(charIndex1 >= array.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= array.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -593,7 +592,7 @@ public:
 												 mArrayN,
 												 mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
@@ -610,7 +609,7 @@ public:
 												 mArrayN,
 												 mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -630,11 +629,11 @@ public:
 											  mArrayN,
 											  mArrayM)
 						.wait();
-					if(charIndex1 >= array.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= array.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -665,7 +664,7 @@ public:
 											 mArrayN,
 											 mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
@@ -682,7 +681,7 @@ public:
 											 mArrayN,
 											 mArrayM)
 						.wait();
-					if(charIndex >= array.size())  // meaning is a cache index
+					if(charIndex >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -702,11 +701,11 @@ public:
 										  mArrayN,
 										  mArrayM)
 						.wait();
-					if(charIndex1 >= array.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= array.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -715,21 +714,6 @@ public:
 			} else {
 				std::cout << "unknown token :" << token << std::endl;
 			}
-
-			// std::vector<T>          resultVector(1);
-			// std::variant<int, char> result = evalStack.top();
-			// if(std::holds_alternative<char>(result)) {
-			// 	std::cout << "ref " << std::get<char>(result);
-			// 	resultVector.resize(mArrayLength);
-			// 	mQueue.enqueueReadBuffer(mBuffers[std::get<char>(result) - 'A'],
-			// 							 CL_TRUE,
-			// 							 0,
-			// 							 sizeof(T) * mArrayLength,
-			// 							 resultVector.data());
-			// } else {
-			// 	resultVector[0] = std::get<int>(result);
-			// }
-			// std::cout << " Stack top " << resultVector[0] << "\n";
 		}
 
 		// Final result
@@ -767,12 +751,6 @@ private:
 
 	static char getCacheIndex()
 	{
-		// std::cout << "Pool has ";
-		// for(auto ch: mAvailableCacheIndex) {
-		// 	std::cout << ch;
-		// }
-		// std::cout << std::endl;
-
 		char index;
 		if(!mAvailableCacheIndex.empty()) {
 			index = *mAvailableCacheIndex.begin();
@@ -781,9 +759,7 @@ private:
 			index          = mNewCacheIndex;
 			mNewCacheIndex = mNewCacheIndex + 1;
 			mBuffers.push_back(cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(double) * mArrayLength));
-			// std::cout << static_cast<char>(mNewCacheIndex - 1) << " allocated. new buffer allocated.\n";
 		}
-		// std::cout << index << " allocated.\n";
 		return index;
 	}
 };

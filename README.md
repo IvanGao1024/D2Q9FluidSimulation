@@ -37,4 +37,4 @@ This is a study project focused on simulating fluid dynamics using lattice Boltz
 
 ## Notes
 
-This project is for study purposes and is not intended for external use or contributions.
+This project is primarily for study purposes. While it is not designed for production use, feedback, issue reports, and recommendations are welcome.

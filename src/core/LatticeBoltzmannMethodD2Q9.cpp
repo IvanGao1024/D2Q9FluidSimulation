@@ -124,12 +124,6 @@ void LatticeBoltzmannMethodD2Q9::step(bool saveImage)
 	collision();
 	streaming();
 
-	// for (size_t i = 0; i < 9; i++)
-	// {
-	// 	mTemperature[i].print();
-	// 	/* code */
-	// }
-
 	if(saveImage) {
 		buildResultingDensityMatrix();
 		buildResultingTemperatureMatrix();
@@ -380,8 +374,6 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()
 {
 	// TODO: stub
-	// mVelocityU = mVelocityUSourceArray;
-	// mVelocityV = mVelocityVSourceArray;
 	mVelocityU = Matrix<double>(mWidth, mHeight);
 	mVelocityV = Matrix<double>(mWidth, mHeight);
 }
