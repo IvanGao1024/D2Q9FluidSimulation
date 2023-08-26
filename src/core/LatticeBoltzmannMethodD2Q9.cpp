@@ -49,7 +49,7 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int   height,
 }
 #pragma omp section
 {
-	mDensity[5] = Matrix<double>(mWidth, mHeight, initialDensityArray, 3);
+	mDensity[5] = Matrix<double>(mWidth, mHeight, initialDensityArray, 1 / 36);
 }
 #pragma omp section
 {
@@ -61,7 +61,7 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int   height,
 }
 #pragma omp section
 {
-	mTemperature[5] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, 3);
+	mTemperature[5] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, 1 / 36);
 }
 }
 
@@ -149,6 +149,8 @@ void LatticeBoltzmannMethodD2Q9::collision()
 
 		std::cout << "mOmega_m\n";
 		mOmega_m.print();
+		std::cout<< mOmega_m.getValue(0) << "\n";
+
 	}
 	if(mDiffusionCoefficientArrayRevised) {
 		mOmega_s =
@@ -374,6 +376,7 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 		mTemperature[7].rightAdiabatic();
 		break;
 	case 2:
+		std::cout << "reach\n";
 		mDensity[3].rightDirichlet((2/9) * mRight.parameter1, mDensity[1]);
 		mTemperature[3].rightDirichlet((2/9) * mRight.parameter1, mTemperature[1]);
 		mDensity[6].rightDirichlet((2/36) * mRight.parameter1, mDensity[8]);
@@ -384,6 +387,8 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 
 	default: break;
 	}
+
+	mDensity[3].print();
 }
 
 void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()

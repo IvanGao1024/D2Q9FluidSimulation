@@ -112,7 +112,7 @@ private:
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] + B[originalIndexB];
 			}
-			void kernel kernelAddingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelAddingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const double C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] + C;
@@ -124,12 +124,12 @@ private:
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] - B[originalIndexB];
 			}
-			void kernel kernelSubtractingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelSubtractingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const double C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] - C;
 			}
-			void kernel kernelConstantSubtracting(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelConstantSubtracting(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const double C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = C - A[originalIndexA];
@@ -141,7 +141,7 @@ private:
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] * B[originalIndexB];
 			}
-			void kernel kernelMultiplicatingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelMultiplicatingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const double C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] * C;
@@ -151,14 +151,14 @@ private:
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
-				int bValue = B[originalIndexB];
+				double bValue = B[originalIndexB];
 				if (bValue != 0) {  // Ensure don't divide by zero
 					C[i] = A[originalIndexA] / bValue;
 				} else {
 					C[i] = 0;
 				}
 			}
-			void kernel kernelDividingByConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelDividingByConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const double C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				if (C != 0) {  // Ensure don't divide by zero
 					unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
@@ -167,10 +167,10 @@ private:
 					B[i] = 0;
 				}
 			}
-			void kernel kernelConstantDividingBy(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelConstantDividingBy(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const double C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
-				int aValue = A[originalIndexA];
+				double aValue = A[originalIndexA];
 				if (aValue != 0) {  // Ensure don't divide by zero
 					B[i] = C / aValue;
 				} else {
@@ -331,7 +331,7 @@ public:
 										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelAddingArray"));
 		auto kernelAddingConstant = cl::compatibility::
-			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, double, unsigned int, unsigned int>(
 				cl::Kernel(mArithmeticProgram, "kernelAddingConstant"));
 		auto kernelSubtractingArray =
 			cl::compatibility::make_kernel<cl::Buffer,
@@ -344,10 +344,10 @@ public:
 										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelSubtractingArray"));
 		auto kernelSubtractingConstant = cl::compatibility::
-			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, double, unsigned int, unsigned int>(
 				cl::Kernel(mArithmeticProgram, "kernelSubtractingConstant"));
 		auto kernelConstantSubtracting = cl::compatibility::
-			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, double, unsigned int, unsigned int>(
 				cl::Kernel(mArithmeticProgram, "kernelConstantSubtracting"));
 		auto kernelMultiplicatingArray =
 			cl::compatibility::make_kernel<cl::Buffer,
@@ -360,7 +360,7 @@ public:
 										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelMultiplicatingArray"));
 		auto kernelMultiplicatingConstant = cl::compatibility::
-			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, double, unsigned int, unsigned int>(
 				cl::Kernel(mArithmeticProgram, "kernelMultiplicatingConstant"));
 		auto kernelDividingByArray =
 			cl::compatibility::make_kernel<cl::Buffer,
@@ -373,10 +373,10 @@ public:
 										   unsigned int,
 										   unsigned int>(cl::Kernel(mArithmeticProgram, "kernelDividingByArray"));
 		auto kernelDividingByConstant = cl::compatibility::
-			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, double, unsigned int, unsigned int>(
 				cl::Kernel(mArithmeticProgram, "kernelDividingByConstant"));
 		auto kernelConstantDividingBy = cl::compatibility::
-			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, int, unsigned int, unsigned int>(
+			make_kernel<cl::Buffer, cl::Buffer, unsigned int, unsigned int, double, unsigned int, unsigned int>(
 				cl::Kernel(mArithmeticProgram, "kernelConstantDividingBy"));
 
 		// Initialize parameter

@@ -305,7 +305,7 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_DivideByBaseCase) {
     Matrix<double> result4(8, 8, 0.1);
     Matrix<double> result5(8, 8, 10244);
     Matrix<double> result6(8, 8, 5122);
-    Matrix<double> result7(8, 8, 5115);
+    Matrix<double> result7(8, 8, 5115.5);
     Matrix<double> result8(8, 8, 1707.1666666666667);
     Matrix<double> result9(8, 8, 0.00024606299212598425);
     Matrix<double> result10(8, 8, 0);
@@ -352,11 +352,11 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_DivisionShiftCase) {
     Matrix<double> result4(8, 8, 0);
     result4.indexRevision(0, 0, 0.1);
     Matrix<double> result5(8, 8, 0);
-    result5.indexRevision(0, 0, 3414);
+    result5.indexRevision(0, 0, 3414.6666666666665);
     Matrix<double> result6(8, 8, 0);
-    result6.indexRevision(0, 0, 853);
+    result6.indexRevision(0, 0, 853.66666666666663);
     Matrix<double> result7(8, 8, 0);
-    result7.indexRevision(0, 0, 852);
+    result7.indexRevision(0, 0, 852.58333333333337);
     Matrix<double> result8(8, 8, 0);
     result8.indexRevision(0, 0, 512.05);
     Matrix<double> result9(8, 8, 0);
@@ -402,7 +402,8 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedBaseCase) {
     Matrix<double> result2(8, 8, -2);
     Matrix<double> result3(8, 8, 27);
     Matrix<double> result4(8, 8, 1);
-    Matrix<double> result5(8, 8, -2);
+    Matrix<double> result5(8, 8, -1.5999999999999996);
+    Matrix<double> result6(8, 8, 0.8);
 
     Matrix<double> result;
     result = OpenCLMain::instance().evaluateArithmeticFormula(
@@ -420,6 +421,13 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedBaseCase) {
     result = OpenCLMain::instance().evaluateArithmeticFormula(
         "3 + A * (B - 4 / 2) + (C / 3) * (7 - D) + (D + 3) / E - 9", 
         std::vector<Matrix<double>*>{&m1, &m2, &m3, &m4, &m5});
+    EXPECT_EQ(result.getShiftedData(), result5.getShiftedData());
+    m1.fill(0.25);
+    m1.print();
+    result = OpenCLMain::instance().evaluateArithmeticFormula(
+        "1 / ((A * 3) + 0.5)", 
+        std::vector<Matrix<double>*>{&m1});
+    EXPECT_EQ(result.getShiftedData(), result6.getShiftedData());
 }
 
 TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedShiftCase) {
