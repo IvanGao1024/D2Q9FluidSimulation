@@ -107,7 +107,7 @@ case $Command in
         gprof temp/build/bin/MainTests temp/build/gmon.out > temp/documentations/profile/gprof_analysis.txt
 
         # Generate a dot graph, filtering out functions that take less than 1ms
-        gprof temp/build/bin/MainTests temp/build/gmon.out | gprof2dot -n 0.01 -e 0 | dot -Tpng -o temp/documentations/profile/profile.png
+        gprof temp/build/bin/MainTests temp/build/gmon.out | gprof2dot -n 1 -e 0 | dot -Tpng -o temp/documentations/profile/profile.png
 
         # Deactivate the virtual environment
         deactivate

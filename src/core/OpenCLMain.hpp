@@ -281,13 +281,12 @@ public:
 	 * @param values
 	 */
 	template<typename T>
-	static std::vector<T> evaluateArithmeticFormula(
-		const std::string&                                       expression,
-		const unsigned int                                       arrayWidth  = 0,
-		const unsigned int                                       arrayHeight = 0,
-		const std::vector<T*>                                    arrayValues = std::vector<T*>(),
-		const std::vector<std::pair<unsigned int, unsigned int>> arrayShifts =
-			std::vector<std::pair<unsigned int, unsigned int>>())
+	static std::vector<T> evaluateArithmeticFormula(const std::string&    expression,
+													const unsigned int    arrayWidth  = 0,
+													const unsigned int    arrayHeight = 0,
+													const std::vector<T*> arrayValues = std::vector<T*>(),
+													std::vector<std::pair<unsigned int, unsigned int>> arrayShifts =
+														std::vector<std::pair<unsigned int, unsigned int>>())
 	{
 		mArrayLength = arrayWidth * arrayHeight;
 
@@ -303,8 +302,12 @@ public:
 			throw std::invalid_argument("Given dimension mismatch.");
 		}
 		if(arrayShifts.size() != 0 && arrayShifts.size() != arrayValues.size()) {
-			throw std::invalid_argument(
-				"Number of array shifts given doesn't match with the number of array values given.");
+			// throw std::invalid_argument(
+			// "Number of array shifts given doesn't match with the number of array values given.");
+			unsigned int diff = arrayValues.size() - arrayShifts.size();
+			for(size_t i = 0; i < diff; i++) {
+				arrayShifts.push_back(std::pair<unsigned int, unsigned int>(0, 0));
+			}
 		}
 
 		char refIndex = 'A';

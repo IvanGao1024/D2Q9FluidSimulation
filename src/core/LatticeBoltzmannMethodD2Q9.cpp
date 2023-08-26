@@ -31,12 +31,10 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int             
 	mKinematicViscosityArray          = kinematicViscosityArray;
 	mDiffusionCoefficientArray        = diffusionCoefficientArray;
 
-	if (initialDensityArray.empty())
-	{
+	if(initialDensityArray.empty()) {
 		initialDensityArray.resize(mLength);
 	}
-	if (initialTemperatureArray.empty())
-	{
+	if(initialTemperatureArray.empty()) {
 		initialTemperatureArray.resize(mLength);
 	}
 
@@ -126,16 +124,17 @@ void LatticeBoltzmannMethodD2Q9::step(bool saveImage)
 	updateVelocityMatrix();
 	collision();
 	streaming();
+
+	for (size_t i = 0; i < 9; i++)
+	{
+		mTemperature[i].print();
+		/* code */
+	}
+	
 	if(saveImage) {
-		buildResultingDensityMatrix();
 		buildResultingTemperatureMatrix();
-		Matrix<unsigned int> result1(mHeight, mWidth, mResultingDensityArray);
 		Matrix<unsigned int> result2(mHeight, mWidth, mResultingTemperatureArray);
-		result1.print();
 		result2.print();
-		// TODO: verify heat map works
-		// HeatMap::createHeatMap(mResultingDensityMatrix, "density");
-		// HeatMap::createHeatMap(mResultingTemperatureMatrix, "temperature");
 	}
 }
 
@@ -145,130 +144,126 @@ void LatticeBoltzmannMethodD2Q9::collision()
 	buildResultingTemperatureMatrix();
 	if(mKinematicViscosityArrayRevised) {
 		mOmega_m = OpenCLMain::instance().evaluateArithmeticFormula(
-			"1 / ((A * 3) + 50)",
+			"10000 / ((A * 3) + 50)",
 			mWidth,
 			mHeight,
-
 			std::vector<unsigned int*>{mKinematicViscosityArray.data()});
 	}
 	if(mDiffusionCoefficientArrayRevised) {
 		mOmega_s = OpenCLMain::instance().evaluateArithmeticFormula(
-			"1 / ((A * 3) + 50)",
+			"10000 / ((A * 3) + 50)",
 			mWidth,
 			mHeight,
-
 			std::vector<unsigned int*>{mDiffusionCoefficientArray.data()});
 	}
 
 	mTemperature[0].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
-		"A * (100 - B) + B * 44 * C * 1",
+		"(A * (100 - B)) / 100 + (B * 44 * C * 1) / 1000000",
 		mWidth,
 		mHeight,
-
-		std::vector<unsigned int*>{mTemperature[0].getDataData(), mOmega_s.data(), mResultingTemperatureArray.data()}));
-	mTemperature[1].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D)",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[1].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityU.data()}));
-	mTemperature[2].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D)",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[2].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityV.data()}));
-	mTemperature[3].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D)",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[3].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityU.data()}));
-	mTemperature[4].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D)",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[4].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityV.data()}));
-	mTemperature[5].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D + 3 * E))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[5].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data()}));
-	mTemperature[6].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D + 3 * E))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[6].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data()}));
-	mTemperature[7].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D - 3 * E))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[7].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data()}));
-	mTemperature[8].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D - 3 * E))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mTemperature[8].getDataData(),
-																					mOmega_s.data(),
-																					mResultingTemperatureArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data()}));
-	mResultU2  = OpenCLMain::instance().evaluateArithmeticFormula("A * A",
+		std::vector<unsigned int*>{mTemperature[0].getDataData(), mOmega_s.data(), mResultingTemperatureArray.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[0].getShiftIndexPair()}));
+	mTemperature[1].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[1].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityU.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[1].getShiftIndexPair()}));
+	mTemperature[2].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[2].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityV.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[2].getShiftIndexPair()}));
+	mTemperature[3].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[3].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityU.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[3].getShiftIndexPair()}));
+	mTemperature[4].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[4].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityV.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[4].getShiftIndexPair()}));
+	mTemperature[5].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100 + 300 * E / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[5].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[5].getShiftIndexPair()}));
+	mTemperature[6].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100 + 300 * E / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[6].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[6].getShiftIndexPair()}));
+	mTemperature[7].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100 - 300 * E / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[7].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[7].getShiftIndexPair()}));
+	mTemperature[8].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100 - 300 * E / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mTemperature[8].getDataData(),
+								   mOmega_s.data(),
+								   mResultingTemperatureArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[8].getShiftIndexPair()}));
+	mResultU2  = OpenCLMain::instance().evaluateArithmeticFormula("A * A / 100",
                                                                  mWidth,
                                                                  mHeight,
-
                                                                  std::vector<unsigned int*>{mVelocityU.data()});
-	mResultV2  = OpenCLMain::instance().evaluateArithmeticFormula("A * A",
+	mResultV2  = OpenCLMain::instance().evaluateArithmeticFormula("A * A / 100",
                                                                  mWidth,
                                                                  mHeight,
-
                                                                  std::vector<unsigned int*>{mVelocityV.data()});
 	mResultUV2 = OpenCLMain::instance().evaluateArithmeticFormula(
 		"A + B",
 		mWidth,
 		mHeight,
-
 		std::vector<unsigned int*>{mResultU2.data(), mResultV2.data()});
-	mDensity[0].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 15 * D))",
-														 mWidth,
-														 mHeight,
+	mDensity[0].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 150 * D / 100)) / 1000000",
+		mWidth,
+		mHeight,
 
-														 std::vector<unsigned int*>{mDensity[0].getDataData(),
-																					mOmega_m.data(),
-																					mResultingDensityArray.data(),
-																					mResultUV2.data()}));
+		std::vector<unsigned int*>{mDensity[0].getDataData(),
+								   mOmega_m.data(),
+								   mResultingDensityArray.data(),
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[0].getShiftIndexPair()}));
 	mDensity[1].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
-		"A * (100 - B) + B * 44 * C * (100 + 3 * D + 45 * E - 15 * F))",
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100 + 450 * E / 100 - 150 * F / 100)) / 1000000",
 		mWidth,
 		mHeight,
 
@@ -277,84 +272,85 @@ void LatticeBoltzmannMethodD2Q9::collision()
 								   mResultingDensityArray.data(),
 								   mVelocityU.data(),
 								   mResultU2.data(),
-								   mResultUV2.data()}));
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[1].getShiftIndexPair()}));
 	mDensity[2].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
-		"A * (100 - B) + B * 44 * C * (100 + 3 * D + 45 * E - 15 * F))",
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100 + 450 * E / 100 - 150 * F / 100)) / 1000000",
 		mWidth,
 		mHeight,
-
 		std::vector<unsigned int*>{mDensity[2].getDataData(),
 								   mOmega_m.data(),
 								   mResultingDensityArray.data(),
 								   mVelocityV.data(),
 								   mResultV2.data(),
-								   mResultUV2.data()}));
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[2].getShiftIndexPair()}));
 	mDensity[3].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
-		"A * (100 - B) + B * 44 * C * (100 - 3 * D + 45 * E - 15 * F))",
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100 + 450 * E / 100 - 150 * F / 100)) / 1000000",
 		mWidth,
 		mHeight,
-
 		std::vector<unsigned int*>{mDensity[3].getDataData(),
 								   mOmega_m.data(),
 								   mResultingDensityArray.data(),
 								   mVelocityU.data(),
 								   mResultU2.data(),
-								   mResultUV2.data()}));
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[3].getShiftIndexPair()}));
 	mDensity[4].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
-		"A * (100 - B) + B * 44 * C * (100 - 3 * D + 45 * E - 15 * F))",
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100 + 450 * E / 100 - 150 * F / 100)) / 1000000",
 		mWidth,
 		mHeight,
-
 		std::vector<unsigned int*>{mDensity[4].getDataData(),
 								   mOmega_m.data(),
 								   mResultingDensityArray.data(),
 								   mVelocityV.data(),
 								   mResultV2.data(),
-								   mResultUV2.data()}));
-	mDensity[5].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D + 3 * E + 3 * F))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mDensity[5].getDataData(),
-																					mOmega_m.data(),
-																					mResultingDensityArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data(),
-																					mResultUV2.data()}));
-	mDensity[6].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D + 3 * E + 3 * F))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mDensity[6].getDataData(),
-																					mOmega_m.data(),
-																					mResultingDensityArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data(),
-																					mResultUV2.data()}));
-	mDensity[7].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 - 3 * D - 3 * E + 3 * F))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mDensity[7].getDataData(),
-																					mOmega_m.data(),
-																					mResultingDensityArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data(),
-																					mResultUV2.data()}));
-	mDensity[8].resetData(
-		OpenCLMain::instance().evaluateArithmeticFormula("A * (100 - B) + B * 44 * C * (100 + 3 * D - 3 * E + 3 * F))",
-														 mWidth,
-														 mHeight,
-
-														 std::vector<unsigned int*>{mDensity[8].getDataData(),
-																					mOmega_m.data(),
-																					mResultingDensityArray.data(),
-																					mVelocityU.data(),
-																					mVelocityV.data(),
-																					mResultUV2.data()}));
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[4].getShiftIndexPair()}));
+	mDensity[5].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100 + 300 * E / 100 + 300 * F / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mDensity[5].getDataData(),
+								   mOmega_m.data(),
+								   mResultingDensityArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data(),
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[5].getShiftIndexPair()}));
+	mDensity[6].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100 + 300 * E / 100 + 300 * F / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mDensity[6].getDataData(),
+								   mOmega_m.data(),
+								   mResultingDensityArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data(),
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[6].getShiftIndexPair()}));
+	mDensity[7].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 - 300 * D / 100 - 300 * E / 100 + 300 * F / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mDensity[7].getDataData(),
+								   mOmega_m.data(),
+								   mResultingDensityArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data(),
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[7].getShiftIndexPair()}));
+	mDensity[8].resetData(OpenCLMain::instance().evaluateArithmeticFormula(
+		"(A * (100 - B)) / 100 + (B * 44 * C * (100 + 300 * D / 100 - 300 * E / 100 + 300 * F / 100)) / 1000000",
+		mWidth,
+		mHeight,
+		std::vector<unsigned int*>{mDensity[8].getDataData(),
+								   mOmega_m.data(),
+								   mResultingDensityArray.data(),
+								   mVelocityU.data(),
+								   mVelocityV.data(),
+								   mResultUV2.data()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[8].getShiftIndexPair()}));
 }
 
 void LatticeBoltzmannMethodD2Q9::streaming()
@@ -480,7 +476,7 @@ void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()
 void LatticeBoltzmannMethodD2Q9::buildResultingDensityMatrix()
 {
 	mResultingDensityArray = OpenCLMain::instance().evaluateArithmeticFormula(
-		"A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3",
+		"(A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3) / 100",
 		mWidth,
 		mHeight,
 		std::vector<unsigned int*>{mDensity[0].getDataData(),
@@ -491,13 +487,22 @@ void LatticeBoltzmannMethodD2Q9::buildResultingDensityMatrix()
 								   mDensity[5].getDataData(),
 								   mDensity[6].getDataData(),
 								   mDensity[7].getDataData(),
-								   mDensity[8].getDataData()});
+								   mDensity[8].getDataData()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mDensity[0].getShiftIndexPair(),
+														   mDensity[1].getShiftIndexPair(),
+														   mDensity[2].getShiftIndexPair(),
+														   mDensity[3].getShiftIndexPair(),
+														   mDensity[4].getShiftIndexPair(),
+														   mDensity[5].getShiftIndexPair(),
+														   mDensity[6].getShiftIndexPair(),
+														   mDensity[7].getShiftIndexPair(),
+														   mDensity[8].getShiftIndexPair()});
 }
 
 void LatticeBoltzmannMethodD2Q9::buildResultingTemperatureMatrix()
 {
 	mResultingTemperatureArray = OpenCLMain::instance().evaluateArithmeticFormula(
-		"A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3",
+		"(A * 44 + B * 11 + C* 11 + D * 11 + E * 11 + F * 3 + G * 3 + H * 3 + I * 3) / 100",
 		mWidth,
 		mHeight,
 		std::vector<unsigned int*>{mTemperature[0].getDataData(),
@@ -508,5 +513,14 @@ void LatticeBoltzmannMethodD2Q9::buildResultingTemperatureMatrix()
 								   mTemperature[5].getDataData(),
 								   mTemperature[6].getDataData(),
 								   mTemperature[7].getDataData(),
-								   mTemperature[8].getDataData()});
+								   mTemperature[8].getDataData()},
+		std::vector<std::pair<unsigned int, unsigned int>>{mTemperature[0].getShiftIndexPair(),
+														   mTemperature[1].getShiftIndexPair(),
+														   mTemperature[2].getShiftIndexPair(),
+														   mTemperature[3].getShiftIndexPair(),
+														   mTemperature[4].getShiftIndexPair(),
+														   mTemperature[5].getShiftIndexPair(),
+														   mTemperature[6].getShiftIndexPair(),
+														   mTemperature[7].getShiftIndexPair(),
+														   mTemperature[8].getShiftIndexPair()});
 }

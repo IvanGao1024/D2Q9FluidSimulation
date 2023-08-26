@@ -287,7 +287,7 @@ public:
 	void leftAdiabatic()
 	{
 #pragma omp parallel for
-		for(int i = 0; i < M; ++i) {
+		for(int i = 0; i < N; ++i) {
 			unsigned int leftIndex      = i * M;
 			unsigned int leftRightIndex = i * M + 1;
 			unsigned int originalIndexLeft =
@@ -302,7 +302,7 @@ public:
 	void rightAdiabatic()
 	{
 #pragma omp parallel for
-		for(int i = 0; i < M; ++i) {
+		for(int i = 0; i < N; ++i) {
 			unsigned int rightIndex     = (i + 1) * M - 1;
 			unsigned int rightLeftIndex = (i + 1) * M - 2;
 			unsigned int originalIndexRight =
@@ -337,12 +337,13 @@ public:
 		unsigned int   otherColShiftIndex = matrix.getColShiftIndex();
 #pragma omp parallel for
 		for(int i = 0; i < M; ++i) {
-			unsigned int bottomIndex      = i + M * (N - 1);
-			unsigned int originalIndexTop = (((bottomIndex - bottomIndex % M) / M + mRowShiftIndex) % N) * M +
-											(bottomIndex - mColShiftIndex + M) % M;
-			unsigned int originalIndexOtherTop = (((bottomIndex - bottomIndex % M) / M + otherRowShiftIndex) % N) * M +
-												 (bottomIndex - otherColShiftIndex + M) % M;
-			mData[originalIndexTop] = C - other[originalIndexOtherTop];
+			unsigned int bottomIndex         = i + M * (N - 1);
+			unsigned int originalIndexBottom = (((bottomIndex - bottomIndex % M) / M + mRowShiftIndex) % N) * M +
+											   (bottomIndex - mColShiftIndex + M) % M;
+			unsigned int originalIndexOtherBottom =
+				(((bottomIndex - bottomIndex % M) / M + otherRowShiftIndex) % N) * M +
+				(bottomIndex - otherColShiftIndex + M) % M;
+			mData[originalIndexBottom] = C - other[originalIndexOtherBottom];
 		}
 	}
 
@@ -352,13 +353,13 @@ public:
 		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
 		unsigned int   otherColShiftIndex = matrix.getColShiftIndex();
 #pragma omp parallel for
-		for(int i = 0; i < M; ++i) {
+		for(int i = 0; i < N; ++i) {
 			unsigned int leftIndex = i * M;
-			unsigned int originalIndexTop =
+			unsigned int originalIndexLeft =
 				(((leftIndex - leftIndex % M) / M + mRowShiftIndex) % N) * M + (leftIndex - mColShiftIndex + M) % M;
-			unsigned int originalIndexOtherTop = (((leftIndex - leftIndex % M) / M + otherRowShiftIndex) % N) * M +
-												 (leftIndex - otherColShiftIndex + M) % M;
-			mData[originalIndexTop] = C - other[originalIndexOtherTop];
+			unsigned int originalIndexOtherLeft = (((leftIndex - leftIndex % M) / M + otherRowShiftIndex) % N) * M +
+												  (leftIndex - otherColShiftIndex + M) % M;
+			mData[originalIndexLeft] = C - other[originalIndexOtherLeft];
 		}
 	}
 
@@ -368,13 +369,13 @@ public:
 		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
 		unsigned int   otherColShiftIndex = matrix.getColShiftIndex();
 #pragma omp parallel for
-		for(int i = 0; i < M; ++i) {
-			unsigned int rightIndex = (i + 1) * M - 1;
-			unsigned int originalIndexTop =
+		for(int i = 0; i < N; ++i) {
+			unsigned int rightIndex = i * M + N - 1;
+			unsigned int originalIndexRight =
 				(((rightIndex - rightIndex % M) / M + mRowShiftIndex) % N) * M + (rightIndex - mColShiftIndex + M) % M;
-			unsigned int originalIndexOtherTop = (((rightIndex - rightIndex % M) / M + otherRowShiftIndex) % N) * M +
-												 (rightIndex - otherColShiftIndex + M) % M;
-			mData[originalIndexTop] = C - other[originalIndexOtherTop];
+			unsigned int originalIndexOtherRight = (((rightIndex - rightIndex % M) / M + otherRowShiftIndex) % N) * M +
+												   (rightIndex - otherColShiftIndex + M) % M;
+			mData[originalIndexRight] = C - other[originalIndexOtherRight];
 		}
 	}
 };
