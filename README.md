@@ -1,21 +1,40 @@
-# D2Q9FluidSimulation
+# D2Q9 Fluid Simulation Study Project
 
-Based on lattice Boltzmann Methods.
+## Overview
 
-Progress:
+This is a study project focused on simulating fluid dynamics using lattice Boltzmann methods. It utilizes OpenCL for parallel computation and includes tests using Google Test (gtest).
 
-- Diffusion (Finished)
+## Goals and Progress
 
-- Advection - Diffusion (In progress)
+### Completed
 
-- Non-Isothermal Incompressible Fluid Flow (In progress)
+- Diffusion
 
-Requirement:
+- Advection - Diffusion
 
-- QT6.5, OpenCL, OpenMP, C++17.
+### In Progress
 
-Some result:
+- BounceBackBoundary
+
+- OpenBoundary
+
+- Non-Isothermal Incompressible Fluid Flow
+
+## Technical Requirements
+
+- C++17
+- QT 6.5
+- OpenCL
+- OpenMP
+
+## Sample Results
 
 ![Example-3.5.2](resources/Example-3.5.2_fps50.gif)
+
 ![Example-3.10.1](resources/Example-3.10.1_fps50.gif)
+
 ![Example-4.5.2](resources/Example-4.5.2_fps50.gif)
+
+## Notes
+
+This project is for study purposes and is not intended for external use or contributions.
