@@ -70,7 +70,7 @@ case $Command in
         cmake -S . -B temp/build -DQT_LIB_PATH=$QT_LIB_PATH -DCMAKE_BUILD_TYPE=Debug
         make --directory=temp/build -j$(nproc) all install
         ;;
-    test) # test
+   test) # test
         # valgrind --tool=memcheck --leak-check=yes ./temp/build/bin/MainBenchmarks --benchmark_filter=LatticeBoltzmannMethodD2Q9_InitiationBenchmark
         rm -rf temp/documentations/coverages
         rm -rf temp/documentations/profile
@@ -89,7 +89,7 @@ case $Command in
         # Generate the coverage report
         gcovr -r . -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o temp/documentations/coverages/report_coverage.html
 
-        # Move gmon.out and gprof directory to the desired directory
+        # Move gmon.out to the desired directory
         mv gmon.out temp/build/
 
         # Check if the virtual environment already exists, if not create it
@@ -103,11 +103,10 @@ case $Command in
         # Install gprof2dot
         pip install gprof2dot
 
-        # Generate the gprof output and save it as text
         gprof temp/build/bin/MainTests temp/build/gmon.out > temp/documentations/profile/gprof_analysis.txt
-
-        # Generate a dot graph, filtering out functions that take less than 1ms
-        gprof temp/build/bin/MainTests temp/build/gmon.out | gprof2dot -n 1 -e 0 | dot -Tpng -o temp/documentations/profile/profile.png
+        gprof temp/build/bin/MainTests temp/build/gmon.out | gprof2dot -n 0.001 -e 0 > temp/documentations/profile/full_profile.dot
+        cat temp/documentations/profile/full_profile.dot | grep -v -E "(testing::)" > temp/documentations/profile/filtered_profile.dot
+        dot -Tpng -o temp/documentations/profile/profile.png temp/documentations/profile/filtered_profile.dot
 
         # Deactivate the virtual environment
         deactivate
