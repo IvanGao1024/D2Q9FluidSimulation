@@ -6,12 +6,12 @@
 #include "HeatMap.hpp"
 #include "OpenCLMain.hpp"
 
-LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int   height,
-													   unsigned int   width,
-													   Boundary       top,
-													   Boundary       bottom,
-													   Boundary       left,
-													   Boundary       right,
+LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int        height,
+													   unsigned int        width,
+													   Boundary            top,
+													   Boundary            bottom,
+													   Boundary            left,
+													   Boundary            right,
 													   std::vector<double> kinematicViscosityArray,
 													   std::vector<double> diffusionCoefficientArray,
 													   std::vector<double> initialDensityArray,
@@ -28,8 +28,8 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int   height,
 
 	mKinematicViscosityArrayRevised   = true;
 	mDiffusionCoefficientArrayRevised = true;
-	mKinematicViscosityArray = Matrix<double>(mWidth, mHeight, kinematicViscosityArray);
-	mDiffusionCoefficientArray = Matrix<double>(mWidth, mHeight, diffusionCoefficientArray);
+	mKinematicViscosityArray          = Matrix<double>(mWidth, mHeight, kinematicViscosityArray);
+	mDiffusionCoefficientArray        = Matrix<double>(mWidth, mHeight, diffusionCoefficientArray);
 
 	if(initialDensityArray.empty()) {
 		initialDensityArray.resize(mLength);
@@ -41,27 +41,27 @@ LatticeBoltzmannMethodD2Q9::LatticeBoltzmannMethodD2Q9(unsigned int   height,
 #pragma omp parallel sections
 	{
 #pragma omp section
-		{mDensity[0] = Matrix<double>(mWidth, mHeight, initialDensityArray, 4 / 9);
+		{mDensity[0] = Matrix<double>(mWidth, mHeight, initialDensityArray, 4 / 9.0);
 }
 #pragma omp section
 {
-	mDensity[1] = Matrix<double>(mWidth, mHeight, initialDensityArray, 1 / 9);
+	mDensity[1] = Matrix<double>(mWidth, mHeight, initialDensityArray, 1 / 9.0);
 }
 #pragma omp section
 {
-	mDensity[5] = Matrix<double>(mWidth, mHeight, initialDensityArray, 1 / 36);
+	mDensity[5] = Matrix<double>(mWidth, mHeight, initialDensityArray, 1 / 36.0);
 }
 #pragma omp section
 {
-	mTemperature[0] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, 4 / 9);
+	mTemperature[0] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, 4 / 9.0);
 }
 #pragma omp section
 {
-	mTemperature[1] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, (1 / 9));
+	mTemperature[1] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, 1 / 9.0);
 }
 #pragma omp section
 {
-	mTemperature[5] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, 1 / 36);
+	mTemperature[5] = Matrix<double>(mWidth, mHeight, initialTemperatureArray, 1 / 36.0);
 }
 }
 
@@ -132,7 +132,10 @@ void LatticeBoltzmannMethodD2Q9::step(bool saveImage)
 	// }
 
 	if(saveImage) {
+		buildResultingDensityMatrix();
 		buildResultingTemperatureMatrix();
+		std::cout << "mResultingDensityArray\n";
+		mResultingDensityArray.print();
 		std::cout << "mResultingTemperatureArray\n";
 		mResultingTemperatureArray.print();
 	}
@@ -146,19 +149,11 @@ void LatticeBoltzmannMethodD2Q9::collision()
 		mOmega_m =
 			OpenCLMain::instance().evaluateArithmeticFormula("1 / ((A * 3) + 0.5)",
 															 std::vector<Matrix<double>*>{&mKinematicViscosityArray});
-
-		std::cout << "mOmega_m\n";
-		mOmega_m.print();
-		std::cout<< mOmega_m.getValue(0) << "\n";
-
 	}
 	if(mDiffusionCoefficientArrayRevised) {
 		mOmega_s =
 			OpenCLMain::instance().evaluateArithmeticFormula("1 / ((A * 3) + 0.5)",
 															 std::vector<Matrix<double>*>{&mDiffusionCoefficientArray});
-
-		std::cout << "mOmega_s\n";
-		mOmega_s.print();
 	}
 
 	mTemperature[0] = OpenCLMain::instance().evaluateArithmeticFormula(
@@ -300,8 +295,7 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 	mTemperature[8].shift(1, -1);
 
 	switch(mTop.boundary) {
-	case 0: break;
-	case 1:
+	case 0:
 		mDensity[4].topAdiabatic();
 		mTemperature[4].topAdiabatic();
 		mDensity[7].topAdiabatic();
@@ -309,21 +303,20 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 		mDensity[8].topAdiabatic();
 		mTemperature[8].topAdiabatic();
 		break;
-	case 2:
-		mDensity[4].topDirichlet((2/9) * mTop.parameter1, mDensity[2]);
-		mTemperature[4].topDirichlet((2/9) * mTop.parameter1, mTemperature[2]);
-		mDensity[7].topDirichlet((2/36) * mTop.parameter1, mDensity[5]);
-		mTemperature[7].topDirichlet((2/36) * mTop.parameter1, mTemperature[5]);
-		mDensity[8].topDirichlet((2/36) * mTop.parameter1, mDensity[6]);
-		mTemperature[8].topDirichlet((2/36) * mTop.parameter1, mTemperature[6]);
+	case 1:
+		mDensity[4].topDirichlet((2 / 9.0) * mTop.parameter1, mDensity[2]);
+		mTemperature[4].topDirichlet((2 / 9.0) * mTop.parameter1, mTemperature[2]);
+		mDensity[7].topDirichlet((2 / 36.0) * mTop.parameter1, mDensity[5]);
+		mTemperature[7].topDirichlet((2 / 36.0) * mTop.parameter1, mTemperature[5]);
+		mDensity[8].topDirichlet((2 / 36.0) * mTop.parameter1, mDensity[6]);
+		mTemperature[8].topDirichlet((2 / 36.0) * mTop.parameter1, mTemperature[6]);
 		break;
 
 	default: break;
 	}
 
 	switch(mBottom.boundary) {
-	case 0: break;
-	case 1:
+	case 0:
 		mDensity[2].bottomAdiabatic();
 		mTemperature[2].bottomAdiabatic();
 		mDensity[5].bottomAdiabatic();
@@ -331,21 +324,20 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 		mDensity[6].bottomAdiabatic();
 		mTemperature[6].bottomAdiabatic();
 		break;
-	case 2:
-		mDensity[2].bottomDirichlet((2/9) * mBottom.parameter1, mDensity[4]);
-		mTemperature[2].bottomDirichlet((2/9) * mBottom.parameter1, mTemperature[4]);
-		mDensity[5].bottomDirichlet((2/36) * mBottom.parameter1, mDensity[7]);
-		mTemperature[5].bottomDirichlet((2/36) * mBottom.parameter1, mTemperature[7]);
-		mDensity[6].bottomDirichlet((2/36) * mBottom.parameter1, mDensity[8]);
-		mTemperature[6].bottomDirichlet((2/36) * mBottom.parameter1, mTemperature[8]);
+	case 1:
+		mDensity[2].bottomDirichlet((2 / 9.0) * mBottom.parameter1, mDensity[4]);
+		mTemperature[2].bottomDirichlet((2 / 9.0) * mBottom.parameter1, mTemperature[4]);
+		mDensity[5].bottomDirichlet((2 / 36.0) * mBottom.parameter1, mDensity[7]);
+		mTemperature[5].bottomDirichlet((2 / 36.0) * mBottom.parameter1, mTemperature[7]);
+		mDensity[6].bottomDirichlet((2 / 36.0) * mBottom.parameter1, mDensity[8]);
+		mTemperature[6].bottomDirichlet((2 / 36.0) * mBottom.parameter1, mTemperature[8]);
 		break;
 
 	default: break;
 	}
 
 	switch(mLeft.boundary) {
-	case 0: break;
-	case 1:
+	case 0:
 		mDensity[1].leftAdiabatic();
 		mTemperature[1].leftAdiabatic();
 		mDensity[5].leftAdiabatic();
@@ -353,21 +345,20 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 		mDensity[8].leftAdiabatic();
 		mTemperature[8].leftAdiabatic();
 		break;
-	case 2:
-		mDensity[1].leftDirichlet((2/9) * mLeft.parameter1, mDensity[3]);
-		mTemperature[1].leftDirichlet((2/9) * mLeft.parameter1, mTemperature[3]);
-		mDensity[5].leftDirichlet((2/36) * mLeft.parameter1, mDensity[7]);
-		mTemperature[5].leftDirichlet((2/36) * mLeft.parameter1, mTemperature[7]);
-		mDensity[8].leftDirichlet((2/36) * mLeft.parameter1, mDensity[6]);
-		mTemperature[8].leftDirichlet((2/36) * mLeft.parameter1, mTemperature[6]);
+	case 1:
+		mDensity[1].leftDirichlet((2 / 9.0) * mLeft.parameter1, mDensity[3]);
+		mTemperature[1].leftDirichlet((2 / 9.0) * mLeft.parameter1, mTemperature[3]);
+		mDensity[5].leftDirichlet((2 / 36.0) * mLeft.parameter1, mDensity[7]);
+		mTemperature[5].leftDirichlet((2 / 36.0) * mLeft.parameter1, mTemperature[7]);
+		mDensity[8].leftDirichlet((2 / 36.0) * mLeft.parameter1, mDensity[6]);
+		mTemperature[8].leftDirichlet((2 / 36.0) * mLeft.parameter1, mTemperature[6]);
 		break;
 
 	default: break;
 	}
 
 	switch(mRight.boundary) {
-	case 0: break;
-	case 1:
+	case 0:
 		mDensity[3].rightAdiabatic();
 		mTemperature[3].rightAdiabatic();
 		mDensity[6].rightAdiabatic();
@@ -375,20 +366,17 @@ void LatticeBoltzmannMethodD2Q9::streaming()
 		mDensity[7].rightAdiabatic();
 		mTemperature[7].rightAdiabatic();
 		break;
-	case 2:
-		std::cout << "reach\n";
-		mDensity[3].rightDirichlet((2/9) * mRight.parameter1, mDensity[1]);
-		mTemperature[3].rightDirichlet((2/9) * mRight.parameter1, mTemperature[1]);
-		mDensity[6].rightDirichlet((2/36) * mRight.parameter1, mDensity[8]);
-		mTemperature[6].rightDirichlet((2/36) * mRight.parameter1, mTemperature[8]);
-		mDensity[7].rightDirichlet((2/36) * mRight.parameter1, mDensity[5]);
-		mTemperature[7].rightDirichlet((2/36) * mRight.parameter1, mTemperature[5]);
+	case 1:
+		mDensity[3].rightDirichlet((2 / 9.0) * mRight.parameter1, mDensity[1]);
+		mTemperature[3].rightDirichlet((2 / 9.0) * mRight.parameter1, mTemperature[1]);
+		mDensity[6].rightDirichlet((2 / 36.0) * mRight.parameter1, mDensity[8]);
+		mTemperature[6].rightDirichlet((2 / 36.0) * mRight.parameter1, mTemperature[8]);
+		mDensity[7].rightDirichlet((2 / 36.0) * mRight.parameter1, mDensity[5]);
+		mTemperature[7].rightDirichlet((2 / 36.0) * mRight.parameter1, mTemperature[5]);
 		break;
 
 	default: break;
 	}
-
-	mDensity[3].print();
 }
 
 void LatticeBoltzmannMethodD2Q9::updateVelocityMatrix()

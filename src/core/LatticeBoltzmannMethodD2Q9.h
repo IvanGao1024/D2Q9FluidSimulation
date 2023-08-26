@@ -32,13 +32,13 @@ class LatticeBoltzmannMethodD2Q9
 	static inline constexpr unsigned int MATRIX_SIZE = 9;  // the number of direction
 
 public:
-	enum BoundaryType { NO, ADIABATIC, CONSTANT, BOUNCEBACK, OPEN };
+	enum BoundaryType { ADIABATIC, CONSTANT, BOUNCEBACK, OPEN };
 	struct Boundary {
 		BoundaryType boundary;
-		int          parameter1;
-		int          parameter2;
+		double       parameter1;
+		double       parameter2;
 
-		Boundary(): boundary(BoundaryType::NO), parameter1(0), parameter2(0)
+		Boundary(): boundary(BoundaryType::ADIABATIC), parameter1(0), parameter2(0)
 		{
 		}
 		Boundary(BoundaryType type): boundary(type), parameter1(0), parameter2(0)
@@ -87,10 +87,10 @@ private:
 	Boundary     mRight;
 
 private:  // Internal data
-	bool                 mKinematicViscosityArrayRevised;
-	bool                 mDiffusionCoefficientArrayRevised;
-	Matrix<double>       mKinematicViscosityArray;
-	Matrix<double>       mDiffusionCoefficientArray;
+	bool           mKinematicViscosityArrayRevised;
+	bool           mDiffusionCoefficientArrayRevised;
+	Matrix<double> mKinematicViscosityArray;
+	Matrix<double> mDiffusionCoefficientArray;
 	Matrix<double> mDensity[MATRIX_SIZE];
 	Matrix<double> mTemperature[MATRIX_SIZE];
 
@@ -118,12 +118,12 @@ public:
 	// Matrix<double> mVelocityVSourceArray;
 
 public:
-	LatticeBoltzmannMethodD2Q9(unsigned int   height,
-							   unsigned int   width,
-							   Boundary       top,
-							   Boundary       bottom,
-							   Boundary       left,
-							   Boundary       right,
+	LatticeBoltzmannMethodD2Q9(unsigned int        height,
+							   unsigned int        width,
+							   Boundary            top,
+							   Boundary            bottom,
+							   Boundary            left,
+							   Boundary            right,
 							   std::vector<double> kinematicViscosityArray,
 							   std::vector<double> diffusionCoefficientArray,
 							   std::vector<double> initialDensityArray     = std::vector<double>(),

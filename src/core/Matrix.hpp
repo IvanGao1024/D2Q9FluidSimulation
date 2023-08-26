@@ -58,7 +58,7 @@ public:
 	Matrix(const unsigned int   nRow,
 		   const unsigned int   nColumn,
 		   const std::vector<T> values,
-		   const double   magnification = 1,
+		   const double         magnification = 1,
 		   const unsigned int   rowShiftIndex = 0,
 		   const unsigned int   colShiftIndex = 0):
 		N(nRow),

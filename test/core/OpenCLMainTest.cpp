@@ -423,7 +423,6 @@ TEST_F(OpenCLMainTest, EvaluateArithmeticFormulaTest_CombinedBaseCase) {
         std::vector<Matrix<double>*>{&m1, &m2, &m3, &m4, &m5});
     EXPECT_EQ(result.getShiftedData(), result5.getShiftedData());
     m1.fill(0.25);
-    m1.print();
     result = OpenCLMain::instance().evaluateArithmeticFormula(
         "1 / ((A * 3) + 0.5)", 
         std::vector<Matrix<double>*>{&m1});
