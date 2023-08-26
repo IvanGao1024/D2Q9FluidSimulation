@@ -20,11 +20,11 @@ This is a study project focused on simulating fluid dynamics using lattice Boltz
 
 - Non-Isothermal Incompressible Fluid Flow
 
-## Technical Requirements
+## Dependency
 
 - C++17
 - QT 6.5
-- OpenCL
+- OpenCL 3
 - OpenMP
 
 ## Sample Results
