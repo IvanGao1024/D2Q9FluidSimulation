@@ -106,48 +106,48 @@ private:
 
 		// Initiate Arithmetic Kernel
 		std::string arithmeticKernelCode = R"(
-			void kernel kernelAddingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
+			void kernel kernelAddingArray(global double* C, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, global const double* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] + B[originalIndexB];
 			}
-			void kernel kernelAddingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelAddingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] + C;
 			}
 
-			void kernel kernelSubtractingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
+			void kernel kernelSubtractingArray(global double* C, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, global const double* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] - B[originalIndexB];
 			}
-			void kernel kernelSubtractingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelSubtractingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] - C;
 			}
-			void kernel kernelConstantSubtracting(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelConstantSubtracting(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = C - A[originalIndexA];
 			}
 
-			void kernel kernelMultiplicatingArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
+			void kernel kernelMultiplicatingArray(global double* C, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, global const double* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
 				C[i] = A[originalIndexA] * B[originalIndexB];
 			}
-			void kernel kernelMultiplicatingConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelMultiplicatingConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				B[i] = A[originalIndexA] * C;
 			}
 
-			void kernel kernelDividingByArray(global int* C, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, global const int* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
+			void kernel kernelDividingByArray(global double* C, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, global const double* B, const unsigned int shiftBRow, const unsigned int shiftBCol, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				unsigned int originalIndexB = (((i - i % M) / M + shiftBRow) %  N) * M + (i - shiftBCol + M) % M;
@@ -158,7 +158,7 @@ private:
 					C[i] = 0;
 				}
 			}
-			void kernel kernelDividingByConstant(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelDividingByConstant(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				if (C != 0) {  // Ensure don't divide by zero
 					unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
@@ -167,7 +167,7 @@ private:
 					B[i] = 0;
 				}
 			}
-			void kernel kernelConstantDividingBy(global int* B, global const int* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
+			void kernel kernelConstantDividingBy(global double* B, global const double* A, const unsigned int shiftARow, const unsigned int shiftACol, const int C, const unsigned int N, const unsigned int M) {
 				unsigned int i = get_global_id(0);
 				unsigned int originalIndexA = (((i - i % M) / M + shiftARow) %  N) * M + (i - shiftACol + M) % M;
 				int aValue = A[originalIndexA];
@@ -280,35 +280,24 @@ public:
 	 * @param arrayLength
 	 * @param values
 	 */
-	template<typename T>
-	static std::vector<T> evaluateArithmeticFormula(const std::string&    expression,
-													const unsigned int    arrayWidth  = 0,
-													const unsigned int    arrayHeight = 0,
-													const std::vector<T*> arrayValues = std::vector<T*>(),
-													std::vector<std::pair<unsigned int, unsigned int>> arrayShifts =
-														std::vector<std::pair<unsigned int, unsigned int>>())
+	static Matrix<double> evaluateArithmeticFormula(
+		const std::string&                  expression,
+		const std::vector<Matrix<double>*>& array = std::vector<Matrix<double>*>())
 	{
-		mArrayLength = arrayWidth * arrayHeight;
+		unsigned int mArrayN = 0;
+		unsigned int mArrayM = 0;
 
-		if(!std::is_arithmetic<T>::value) {
-			throw std::invalid_argument("Array values type are not numeric.");
-		}
-		if(mArrayLength != 0) {
-			if(!(mArrayLength && !(mArrayLength & (mArrayLength - 1)))) {
-				throw std::invalid_argument("Array length are not power of 2.");
+		if(array.size() != 0) {
+			mArrayN = array.at(0)->getN();
+			mArrayM = array.at(0)->getM();
+
+			for(size_t i = 0; i < array.size(); i++) {
+				if(array.at(i)->getN() != mArrayN || array.at(i)->getM() != mArrayM) {
+					throw std::invalid_argument("Given matrix's dimension mismatch.");
+				}
 			}
 		}
-		if(arrayWidth * arrayHeight != mArrayLength) {
-			throw std::invalid_argument("Given dimension mismatch.");
-		}
-		if(arrayShifts.size() != 0 && arrayShifts.size() != arrayValues.size()) {
-			// throw std::invalid_argument(
-			// "Number of array shifts given doesn't match with the number of array values given.");
-			unsigned int diff = arrayValues.size() - arrayShifts.size();
-			for(size_t i = 0; i < diff; i++) {
-				arrayShifts.push_back(std::pair<unsigned int, unsigned int>(0, 0));
-			}
-		}
+		mArrayLength = mArrayN * mArrayM;
 
 		char refIndex = 'A';
 		// Check for number of variable mismatch by counting unique uppercase characters
@@ -325,9 +314,7 @@ public:
 				}
 			}
 		}
-		// std::cout << "Total of " << uniqueUppercaseChars.size() << " variables detected.\n";
-		// std::cout << "Total of " << arrayValues.size() << " arrayValues given.\n";
-		if(uniqueUppercaseChars.size() != arrayValues.size()) {
+		if(uniqueUppercaseChars.size() != array.size()) {
 			throw std::invalid_argument(
 				"Error: Mismatch between the number of variable used in expression and the number of variable given.");
 		}
@@ -393,50 +380,54 @@ public:
 				cl::Kernel(mArithmeticProgram, "kernelConstantDividingBy"));
 
 		// Initialize parameter
-		mQueue  = cl::CommandQueue(mContext, mDevice);
-		mGlobal = cl::NDRange(mArrayLength);
-		if(arrayValues.size() != 0) {
-			mBuffers = std::vector<cl::Buffer>(arrayValues.size() + 1);
+		if(array.size() != 0) {
+			mQueue   = cl::CommandQueue(mContext, mDevice);
+			mGlobal  = cl::NDRange(mArrayLength);
+			mBuffers = std::vector<cl::Buffer>(array.size() + 1);
 			// Allocate buffer memory
 #pragma omp parallel for
-			for(size_t i = 0; i < arrayValues.size(); i++) {
-				mBuffers[i] = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(T) * mArrayLength);
+			for(size_t i = 0; i < array.size(); i++) {
+				mBuffers[i] = cl::Buffer(mContext, CL_MEM_READ_ONLY, sizeof(double) * mArrayLength);
 			}
-			mBuffers[arrayValues.size()] = cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(T) * mArrayLength);
-			// std::cout << "Total of " << arrayValues.size() + 1 << " buffer created.\n";
+			mBuffers[array.size()] = cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(double) * mArrayLength);
+			// std::cout << "Total of " << array.size() + 1 << " buffer created.\n";
 
 			// Initialize buffer
 #pragma omp parallel for
-			for(size_t i = 0; i < arrayValues.size(); i++) {
-				mQueue.enqueueWriteBuffer(mBuffers[i], CL_TRUE, 0, sizeof(T) * mArrayLength, arrayValues[i]);
+			for(size_t i = 0; i < array.size(); i++) {
+				mQueue.enqueueWriteBuffer(mBuffers[i],
+										  CL_TRUE,
+										  0,
+										  sizeof(double) * mArrayLength,
+										  array[i]->getDataData());
 			}
 		}
 
 		// set for tracking cache index
 		mAvailableCacheIndex.clear();
-		mAvailableCacheIndex.insert('A' + arrayValues.size());
-		mNewCacheIndex = 'A' + arrayValues.size() + 1;
+		mAvailableCacheIndex.insert('A' + array.size());
+		mNewCacheIndex = 'A' + array.size() + 1;
 
 		// Forming the post fix queue
 		std::queue<std::string> mPostfixNotationQueue = enqueueArithmeticFormula(expression);
 
 		// Stack for evaluation
-		std::stack<std::variant<int, char>> evalStack;
+		std::stack<std::variant<double, char>> evalStack;
 
 		// Loop over stack and evaluate
 		while(!mPostfixNotationQueue.empty()) {
 			std::string token = mPostfixNotationQueue.front();
 			mPostfixNotationQueue.pop();
-			if(std::regex_match(token, std::regex("-?[0-9]+"))) {
+			if(isDouble(token)) {
 				// std::cout << "Push " << token << "\n";
-				evalStack.push(std::stoi(token));
+				evalStack.push(std::stod(token));
 			} else if(token.size() == 1 && isupper(token[0])) {
 				// std::cout << "Push " << token << "\n";
 				evalStack.push(token[0]);
 			} else if(token == "+") {
-				std::variant<int, char> second = evalStack.top();
+				std::variant<double, char> second = evalStack.top();
 				evalStack.pop();
-				std::variant<int, char> first = evalStack.top();
+				std::variant<double, char> first = evalStack.top();
 				evalStack.pop();
 				// std::visit([&first, &second](auto firstValue) {
 				// 	std::visit([&firstValue, &second](auto secondValue) {
@@ -444,74 +435,71 @@ public:
 				// 	}, second);
 				// }, first);
 
-				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
-					evalStack.push(std::get<int>(first) + std::get<int>(second));
-				} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				if(std::holds_alternative<double>(first) && std::holds_alternative<double>(second)) {
+					evalStack.push(std::get<double>(first) + std::get<double>(second));
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<double>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(first) - 'A';
-					kernelAddingConstant(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(second),
-						arrayHeight,
-						arrayWidth)
+					kernelAddingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										 mBuffers[cacheChar - 'A'],
+										 mBuffers[charIndex],
+										 charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+										 charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+										 std::get<double>(second),
+										 mArrayN,
+										 mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
 					evalStack.push(cacheChar);
-				} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				} else if(std::holds_alternative<double>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(second) - 'A';
-					kernelAddingConstant(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(first),
-						arrayHeight,
-						arrayWidth)
+					kernelAddingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										 mBuffers[cacheChar - 'A'],
+										 mBuffers[charIndex],
+										 charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+										 charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+										 std::get<double>(first),
+										 mArrayN,
+										 mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(cacheChar);
 				} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar  = getCacheIndex<T>();
+					char         cacheChar  = getCacheIndex();
 					unsigned int charIndex1 = std::get<char>(first) - 'A';
 					unsigned int charIndex2 = std::get<char>(second) - 'A';
-					kernelAddingArray(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex1],
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].first,
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].second,
-						mBuffers[charIndex2],
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						arrayHeight,
-						arrayWidth)
+					kernelAddingArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+									  mBuffers[cacheChar - 'A'],
+									  mBuffers[charIndex1],
+									  charIndex1 < array.size() ? array.at(charIndex1)->getRowShiftIndex() : 0,
+									  charIndex1 < array.size() ? array.at(charIndex1)->getColShiftIndex() : 0,
+									  mBuffers[charIndex2],
+									  charIndex2 < array.size() ? array.at(charIndex2)->getRowShiftIndex() : 0,
+									  charIndex2 < array.size() ? array.at(charIndex2)->getColShiftIndex() : 0,
+									  mArrayN,
+									  mArrayM)
 						.wait();
-					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(cacheChar);
 				}
 			} else if(token == "-") {
-				std::variant<int, char> second = evalStack.top();
+				std::variant<double, char> second = evalStack.top();
 				evalStack.pop();
-				std::variant<int, char> first = evalStack.top();
+				std::variant<double, char> first = evalStack.top();
 				evalStack.pop();
 				// std::visit([&first, &second](auto firstValue) {
 				// 	std::visit([&firstValue, &second](auto secondValue) {
@@ -519,74 +507,71 @@ public:
 				// 	}, second);
 				// }, first);
 
-				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
-					evalStack.push(std::get<int>(first) - std::get<int>(second));
-				} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				if(std::holds_alternative<double>(first) && std::holds_alternative<double>(second)) {
+					evalStack.push(std::get<double>(first) - std::get<double>(second));
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<double>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(first) - 'A';
-					kernelSubtractingConstant(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(second),
-						arrayHeight,
-						arrayWidth)
+					kernelSubtractingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											  mBuffers[cacheChar - 'A'],
+											  mBuffers[charIndex],
+											  charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+											  charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+											  std::get<double>(second),
+											  mArrayN,
+											  mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
 					evalStack.push(cacheChar);
-				} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				} else if(std::holds_alternative<double>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(second) - 'A';
-					kernelConstantSubtracting(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(first),
-						arrayHeight,
-						arrayWidth)
+					kernelConstantSubtracting(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											  mBuffers[cacheChar - 'A'],
+											  mBuffers[charIndex],
+											  charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+											  charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+											  std::get<double>(first),
+											  mArrayN,
+											  mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(cacheChar);
 				} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar  = getCacheIndex<T>();
+					char         cacheChar  = getCacheIndex();
 					unsigned int charIndex1 = std::get<char>(first) - 'A';
 					unsigned int charIndex2 = std::get<char>(second) - 'A';
-					kernelSubtractingArray(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex1],
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].first,
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].second,
-						mBuffers[charIndex2],
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						arrayHeight,
-						arrayWidth)
+					kernelSubtractingArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										   mBuffers[cacheChar - 'A'],
+										   mBuffers[charIndex1],
+										   charIndex1 < array.size() ? array.at(charIndex1)->getRowShiftIndex() : 0,
+										   charIndex1 < array.size() ? array.at(charIndex1)->getColShiftIndex() : 0,
+										   mBuffers[charIndex2],
+										   charIndex2 < array.size() ? array.at(charIndex2)->getRowShiftIndex() : 0,
+										   charIndex2 < array.size() ? array.at(charIndex2)->getColShiftIndex() : 0,
+										   mArrayN,
+										   mArrayM)
 						.wait();
-					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(cacheChar);
 				}
 			} else if(token == "*") {
-				std::variant<int, char> second = evalStack.top();
+				std::variant<double, char> second = evalStack.top();
 				evalStack.pop();
-				std::variant<int, char> first = evalStack.top();
+				std::variant<double, char> first = evalStack.top();
 				evalStack.pop();
 				// std::visit([&first, &second](auto firstValue) {
 				// 	std::visit([&firstValue, &second](auto secondValue) {
@@ -594,74 +579,71 @@ public:
 				// 	}, second);
 				// }, first);
 
-				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
-					evalStack.push(std::get<int>(first) * std::get<int>(second));
-				} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				if(std::holds_alternative<double>(first) && std::holds_alternative<double>(second)) {
+					evalStack.push(std::get<double>(first) * std::get<double>(second));
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<double>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(first) - 'A';
-					kernelMultiplicatingConstant(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(second),
-						arrayHeight,
-						arrayWidth)
+					kernelMultiplicatingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+												 mBuffers[cacheChar - 'A'],
+												 mBuffers[charIndex],
+												 charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+												 charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+												 std::get<double>(second),
+												 mArrayN,
+												 mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
 					evalStack.push(cacheChar);
-				} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				} else if(std::holds_alternative<double>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(second) - 'A';
-					kernelMultiplicatingConstant(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(first),
-						arrayHeight,
-						arrayWidth)
+					kernelMultiplicatingConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+												 mBuffers[cacheChar - 'A'],
+												 mBuffers[charIndex],
+												 charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+												 charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+												 std::get<double>(first),
+												 mArrayN,
+												 mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(cacheChar);
 				} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar  = getCacheIndex<T>();
+					char         cacheChar  = getCacheIndex();
 					unsigned int charIndex1 = std::get<char>(first) - 'A';
 					unsigned int charIndex2 = std::get<char>(second) - 'A';
-					kernelMultiplicatingArray(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex1],
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].first,
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].second,
-						mBuffers[charIndex2],
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						arrayHeight,
-						arrayWidth)
+					kernelMultiplicatingArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											  mBuffers[cacheChar - 'A'],
+											  mBuffers[charIndex1],
+											  charIndex1 < array.size() ? array.at(charIndex1)->getRowShiftIndex() : 0,
+											  charIndex1 < array.size() ? array.at(charIndex1)->getColShiftIndex() : 0,
+											  mBuffers[charIndex2],
+											  charIndex2 < array.size() ? array.at(charIndex2)->getRowShiftIndex() : 0,
+											  charIndex2 < array.size() ? array.at(charIndex2)->getColShiftIndex() : 0,
+											  mArrayN,
+											  mArrayM)
 						.wait();
-					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(cacheChar);
 				}
 			} else if(token == "/") {
-				std::variant<int, char> second = evalStack.top();
+				std::variant<double, char> second = evalStack.top();
 				evalStack.pop();
-				std::variant<int, char> first = evalStack.top();
+				std::variant<double, char> first = evalStack.top();
 				evalStack.pop();
 				// std::visit([&first, &second](auto firstValue) {
 				// 	std::visit([&firstValue, &second](auto secondValue) {
@@ -669,65 +651,62 @@ public:
 				// 	}, second);
 				// }, first);
 
-				if(std::holds_alternative<int>(first) && std::holds_alternative<int>(second)) {
-					evalStack.push(std::get<int>(first) / std::get<int>(second));
-				} else if(std::holds_alternative<char>(first) && std::holds_alternative<int>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				if(std::holds_alternative<double>(first) && std::holds_alternative<double>(second)) {
+					evalStack.push(std::get<double>(first) / std::get<double>(second));
+				} else if(std::holds_alternative<char>(first) && std::holds_alternative<double>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(first) - 'A';
-					kernelDividingByConstant(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(second),
-						arrayHeight,
-						arrayWidth)
+					kernelDividingByConstant(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											 mBuffers[cacheChar - 'A'],
+											 mBuffers[charIndex],
+											 charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+											 charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+											 std::get<double>(second),
+											 mArrayN,
+											 mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
 					evalStack.push(cacheChar);
-				} else if(std::holds_alternative<int>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar = getCacheIndex<T>();
+				} else if(std::holds_alternative<double>(first) && std::holds_alternative<char>(second)) {
+					char         cacheChar = getCacheIndex();
 					unsigned int charIndex = std::get<char>(second) - 'A';
-					kernelConstantDividingBy(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex],
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].first,
-						(arrayShifts.empty() || charIndex >= arrayValues.size()) ? 0 : arrayShifts[charIndex].second,
-						std::get<int>(first),
-						arrayHeight,
-						arrayWidth)
+					kernelConstantDividingBy(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+											 mBuffers[cacheChar - 'A'],
+											 mBuffers[charIndex],
+											 charIndex < array.size() ? array.at(charIndex)->getRowShiftIndex() : 0,
+											 charIndex < array.size() ? array.at(charIndex)->getColShiftIndex() : 0,
+											 std::get<double>(first),
+											 mArrayN,
+											 mArrayM)
 						.wait();
-					if(charIndex >= arrayValues.size())  // meaning is a cache index
+					if(charIndex >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
 					evalStack.push(cacheChar);
 				} else if(std::holds_alternative<char>(first) && std::holds_alternative<char>(second)) {
-					char         cacheChar  = getCacheIndex<T>();
+					char         cacheChar  = getCacheIndex();
 					unsigned int charIndex1 = std::get<char>(first) - 'A';
 					unsigned int charIndex2 = std::get<char>(second) - 'A';
-					kernelDividingByArray(
-						cl::EnqueueArgs(mQueue, mGlobal, mLocal),
-						mBuffers[cacheChar - 'A'],
-						mBuffers[charIndex1],
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].first,
-						(arrayShifts.empty() || charIndex1 >= arrayValues.size()) ? 0 : arrayShifts[charIndex1].second,
-						mBuffers[charIndex2],
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].first,
-						(arrayShifts.empty() || charIndex2 >= arrayValues.size()) ? 0 : arrayShifts[charIndex2].second,
-						arrayHeight,
-						arrayWidth)
+					kernelDividingByArray(cl::EnqueueArgs(mQueue, mGlobal, mLocal),
+										  mBuffers[cacheChar - 'A'],
+										  mBuffers[charIndex1],
+										  charIndex1 < array.size() ? array.at(charIndex1)->getRowShiftIndex() : 0,
+										  charIndex1 < array.size() ? array.at(charIndex1)->getColShiftIndex() : 0,
+										  mBuffers[charIndex2],
+										  charIndex2 < array.size() ? array.at(charIndex2)->getRowShiftIndex() : 0,
+										  charIndex2 < array.size() ? array.at(charIndex2)->getColShiftIndex() : 0,
+										  mArrayN,
+										  mArrayM)
 						.wait();
-					if(charIndex1 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex1 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(first));
 					}
-					if(charIndex2 >= arrayValues.size())  // meaning is a cache index
+					if(charIndex2 >= array.size())  // meaning is a cache index
 					{
 						mAvailableCacheIndex.insert(std::get<char>(second));
 					}
@@ -754,29 +733,38 @@ public:
 		}
 
 		// Final result
-		std::vector<T> resultVector(1);
 		if(!evalStack.empty()) {
-			std::variant<int, char> result = evalStack.top();
-			if(std::holds_alternative<char>(result)) {
-				resultVector.resize(mArrayLength);
-				mQueue.enqueueReadBuffer(mBuffers[std::get<char>(result) - 'A'],
+			Matrix<double>             result;
+			std::variant<double, char> resultVal = evalStack.top();
+			if(std::holds_alternative<char>(resultVal)) {
+				result = Matrix<double>(mArrayN, mArrayM);
+				mQueue.enqueueReadBuffer(mBuffers[std::get<char>(resultVal) - 'A'],
 										 CL_TRUE,
 										 0,
-										 sizeof(T) * mArrayLength,
-										 resultVector.data());
+										 sizeof(double) * mArrayLength,
+										 result.getDataData());
 			} else {
-				resultVector[0] = std::get<int>(result);
+				result = Matrix<double>(1, 1, std::vector<double>{std::get<double>(resultVal)});
 			}
-			// std::cout << "Evaluate Arithmetic Formula: " << expression << " Finished with result " << resultVector[0]
-			// 		  << "\n";
-			return resultVector;
+			return result;
 		} else {
-			throw std::runtime_error("Unknown error, result stack empty or unknown reference to variable.");
+			throw std::runtime_error("Unknown error, result stack empty.");
 		}
 	}
 
 private:
-	template<typename T>
+	static bool isDouble(const std::string& token)
+	{
+		try {
+			std::stod(token);
+			return true;
+		} catch(const std::invalid_argument&) {
+			return false;
+		} catch(const std::out_of_range&) {
+			return false;
+		}
+	}
+
 	static char getCacheIndex()
 	{
 		// std::cout << "Pool has ";
@@ -792,7 +780,7 @@ private:
 		} else {
 			index          = mNewCacheIndex;
 			mNewCacheIndex = mNewCacheIndex + 1;
-			mBuffers.push_back(cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(T) * mArrayLength));
+			mBuffers.push_back(cl::Buffer(mContext, CL_MEM_WRITE_ONLY, sizeof(double) * mArrayLength));
 			// std::cout << static_cast<char>(mNewCacheIndex - 1) << " allocated. new buffer allocated.\n";
 		}
 		// std::cout << index << " allocated.\n";

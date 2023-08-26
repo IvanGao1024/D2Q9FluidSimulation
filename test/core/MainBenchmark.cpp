@@ -5,7 +5,7 @@
 #include "../../src/core/LatticeBoltzmannMethodD2Q9.cpp"
 
 static void LatticeBoltzmannMethodD2Q9_Initiation(benchmark::State& state) {
-    Matrix<unsigned int> m1(4096, 4096, 1);
+    Matrix<double> m1(4096, 4096, 0.25);
     for (auto _ : state) {
         LatticeBoltzmannMethodD2Q9 lbm (4095, 4095,
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
@@ -18,7 +18,7 @@ static void LatticeBoltzmannMethodD2Q9_Initiation(benchmark::State& state) {
 BENCHMARK(LatticeBoltzmannMethodD2Q9_Initiation);
 
 static void LatticeBoltzmannMethodD2Q9_Step(benchmark::State& state) {
-    Matrix<unsigned int> m1(4096, 4096, 1);
+    Matrix<double> m1(4096, 4096, 0.25);
     LatticeBoltzmannMethodD2Q9 lbm (4095, 4095,
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::CONSTANT, 0),
         LatticeBoltzmannMethodD2Q9::Boundary(LatticeBoltzmannMethodD2Q9::BoundaryType::ADIABATIC),

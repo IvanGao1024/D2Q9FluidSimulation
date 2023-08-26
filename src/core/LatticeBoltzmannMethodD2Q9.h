@@ -87,25 +87,25 @@ private:
 	Boundary     mRight;
 
 private:  // Internal data
-	bool                      mKinematicViscosityArrayRevised;
-	bool                      mDiffusionCoefficientArrayRevised;
-	std::vector<unsigned int> mKinematicViscosityArray;
-	std::vector<unsigned int> mDiffusionCoefficientArray;
-	Matrix<unsigned int>      mDensity[MATRIX_SIZE];
-	Matrix<unsigned int>      mTemperature[MATRIX_SIZE];
+	bool                 mKinematicViscosityArrayRevised;
+	bool                 mDiffusionCoefficientArrayRevised;
+	Matrix<double>       mKinematicViscosityArray;
+	Matrix<double>       mDiffusionCoefficientArray;
+	Matrix<double> mDensity[MATRIX_SIZE];
+	Matrix<double> mTemperature[MATRIX_SIZE];
 
-private:                                 // Derived data
-	std::vector<unsigned int> mOmega_m;  // density
-	std::vector<unsigned int> mOmega_s;  // temperature
-	std::vector<unsigned int> mVelocityU;
-	std::vector<unsigned int> mVelocityV;
-	std::vector<unsigned int> mResultU2;   // u^2
-	std::vector<unsigned int> mResultV2;   // v^2
-	std::vector<unsigned int> mResultUV2;  // u^2 + v^2
+private:                      // Derived data
+	Matrix<double> mOmega_m;  // density
+	Matrix<double> mOmega_s;  // temperature
+	Matrix<double> mVelocityU;
+	Matrix<double> mVelocityV;
+	Matrix<double> mResultU2;   // u^2
+	Matrix<double> mResultV2;   // v^2
+	Matrix<double> mResultUV2;  // u^2 + v^2
 
 public:  // Pre allocate memory for output
-	std::vector<unsigned int> mResultingDensityArray;
-	std::vector<unsigned int> mResultingTemperatureArray;
+	Matrix<double> mResultingDensityArray;
+	Matrix<double> mResultingTemperatureArray;
 
 public:
 	// 	// Blocks
@@ -114,20 +114,20 @@ public:
 	// 	// Source Matrix
 	// 	CartesianMatrix<unsigned int> mDensitySourceMatrix;
 	// 	CartesianMatrix<unsigned int> mTemperatureSourceMatrix;
-	// std::vector<unsigned int> mVelocityUSourceArray;
-	// std::vector<unsigned int> mVelocityVSourceArray;
+	// Matrix<double> mVelocityUSourceArray;
+	// Matrix<double> mVelocityVSourceArray;
 
 public:
-	LatticeBoltzmannMethodD2Q9(unsigned int              height,
-							   unsigned int              width,
-							   Boundary                  top,
-							   Boundary                  bottom,
-							   Boundary                  left,
-							   Boundary                  right,
-							   std::vector<unsigned int> kinematicViscosityArray,
-							   std::vector<unsigned int> diffusionCoefficientArray,
-							   std::vector<unsigned int> initialDensityArray     = std::vector<unsigned int>(),
-							   std::vector<unsigned int> initialTemperatureArray = std::vector<unsigned int>());
+	LatticeBoltzmannMethodD2Q9(unsigned int   height,
+							   unsigned int   width,
+							   Boundary       top,
+							   Boundary       bottom,
+							   Boundary       left,
+							   Boundary       right,
+							   std::vector<double> kinematicViscosityArray,
+							   std::vector<double> diffusionCoefficientArray,
+							   std::vector<double> initialDensityArray     = std::vector<double>(),
+							   std::vector<double> initialTemperatureArray = std::vector<double>());
 
 	void step(bool saveImage = false);
 	void buildResultingDensityMatrix();

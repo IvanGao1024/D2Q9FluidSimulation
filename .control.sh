@@ -84,7 +84,7 @@ case $Command in
             exit 1
         fi
         temp/build/bin/MainTests
-        temp/build/bin/MainBenchmarks --benchmark_time_unit=ms
+        # temp/build/bin/MainBenchmarks --benchmark_time_unit=ms
 
         # Generate the coverage report
         gcovr -r . -e '.*\.moc' -e '.*Tests.*' -e '.*Test.*' --exclude-unreachable-branches --exclude-throw-branches --html --html-details -o temp/documentations/coverages/report_coverage.html

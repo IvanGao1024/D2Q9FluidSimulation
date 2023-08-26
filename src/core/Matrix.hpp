@@ -143,6 +143,11 @@ public:  // Helper getter
 		return std::pair<unsigned int, unsigned int>(mRowShiftIndex, mColShiftIndex);
 	}
 
+	T getValue(const unsigned int index) const
+	{
+		return mData.at((((index - index % M) / M + mRowShiftIndex) % N) * M + (index - mColShiftIndex + M) % M);
+	}
+
 	std::vector<T> getData() const
 	{
 		return mData;
@@ -314,7 +319,7 @@ public:
 		}
 	}
 
-	void topDirichlet(const int C, const Matrix<T>& matrix)
+	void topDirichlet(const double C, const Matrix<T>& matrix)
 	{
 		std::vector<T> other              = matrix.getData();
 		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
@@ -330,7 +335,7 @@ public:
 		}
 	}
 
-	void bottomDirichlet(const int C, const Matrix<T>& matrix)
+	void bottomDirichlet(const double C, const Matrix<T>& matrix)
 	{
 		std::vector<T> other              = matrix.getData();
 		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
@@ -347,7 +352,7 @@ public:
 		}
 	}
 
-	void leftDirichlet(const int C, const Matrix<T>& matrix)
+	void leftDirichlet(const double C, const Matrix<T>& matrix)
 	{
 		std::vector<T> other              = matrix.getData();
 		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
@@ -363,7 +368,7 @@ public:
 		}
 	}
 
-	void rightDirichlet(const int C, const Matrix<T>& matrix)
+	void rightDirichlet(const double C, const Matrix<T>& matrix)
 	{
 		std::vector<T> other              = matrix.getData();
 		unsigned int   otherRowShiftIndex = matrix.getRowShiftIndex();
