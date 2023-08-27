@@ -66,7 +66,7 @@ private:
 			throw std::runtime_error("[OpenCL] Platform not found.");
 		}
 
-		List found platforms
+		// List found platforms
 		for(const cl::Platform& platform : all_platforms) {
 			std::cout << "[OpenCL] Platform found: " << platform.getInfo<CL_PLATFORM_NAME>() << "\n";
 		}
@@ -86,7 +86,7 @@ private:
 			throw std::runtime_error("[OpenCL] Device not found.");
 		}
 
-		List found devices
+		// List found devices
 		for(const cl::Device& device : all_devices) {
 			std::cout << "[OpenCL] Device found: " << device.getInfo<CL_DEVICE_NAME>() << "\n";
 		}
